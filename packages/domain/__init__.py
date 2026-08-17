@@ -1,3 +1,5 @@
+from domain.errors import PayGuardError
+from domain.security import generate_api_key, hash_api_key
 from domain.state_machine import (
     TERMINAL_PAYMENT_STATUSES,
     TERMINAL_REFUND_STATUSES,
@@ -16,6 +18,9 @@ from domain.state_machine import (
 __all__ = [
     "Actor",
     "InvalidStateTransition",
+    "PayGuardError",
+    "generate_api_key",
+    "hash_api_key",
     "PaymentStatus",
     "RefundStatus",
     "TERMINAL_PAYMENT_STATUSES",

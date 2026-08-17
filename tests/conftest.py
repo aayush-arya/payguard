@@ -6,6 +6,8 @@ import uuid
 
 import pytest_asyncio
 from database.models import Merchant
+from domain.security import generate_api_key, hash_api_key
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -72,3 +74,43 @@ async def merchant_id(db_session: AsyncSession) -> uuid.UUID:
     db_session.add(merchant)
     await db_session.commit()
     return merchant.id
+
+
+@pytest_asyncio.fixture
+async def merchant_with_key(db_session: AsyncSession) -> tuple[uuid.UUID, str]:
+    api_key = generate_api_key()
+    merchant = Merchant(name="Test Merchant", api_key_hash=hash_api_key(api_key))
+    db_session.add(merchant)
+    await db_session.commit()
+    return merchant.id, api_key
+
+
+@pytest_asyncio.fixture
+async def api_client(db_engine):
+    """An httpx client wired directly to the FastAPI ASGI app -- no real
+    socket, but a real request/response cycle through routing, dependency
+    injection, and the actual Postgres database `db_engine` just truncated.
+
+    database.session.get_engine()/get_sessionmaker() are process-wide
+    lru_cache singletons -- correct for a real long-lived app with one event
+    loop, but pytest-asyncio gives each test function its own event loop, and
+    asyncpg connections can't be reused across event loops. Reset the cache
+    (and dispose the previous engine) so the app under test always gets an
+    engine bound to the current test's loop.
+    """
+    import database.session as session_module
+
+    from apps.api.main import app
+
+    old_engine = session_module.get_engine.cache_info()
+    if old_engine.currsize:
+        await session_module.get_engine().dispose()
+    session_module.get_engine.cache_clear()
+    session_module.get_sessionmaker.cache_clear()
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
+
+    await session_module.get_engine().dispose()
+    session_module.get_engine.cache_clear()
+    session_module.get_sessionmaker.cache_clear()

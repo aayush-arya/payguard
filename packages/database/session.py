@@ -21,7 +21,12 @@ def _database_url() -> str:
 
 @lru_cache(maxsize=1)
 def get_engine() -> AsyncEngine:
-    return create_async_engine(_database_url(), pool_pre_ping=True)
+    return create_async_engine(
+        _database_url(),
+        pool_pre_ping=True,
+        pool_size=int(os.environ.get("DB_POOL_SIZE", "20")),
+        max_overflow=int(os.environ.get("DB_POOL_MAX_OVERFLOW", "30")),
+    )
 
 
 @lru_cache(maxsize=1)

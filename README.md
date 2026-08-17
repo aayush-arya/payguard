@@ -23,8 +23,8 @@ progress.
 
 - [x] Phase 1 — Architecture
 - [x] Phase 2 — Domain + Database
-- [ ] Phase 3 — Payment API
-- [ ] Phase 4 — Provider abstraction
+- [x] Phase 3 — Payment API
+- [x] Phase 4 — Provider abstraction (MockProvider only; real adapters deferred)
 - [ ] Phase 5 — Idempotency + concurrency
 - [ ] Phase 6 — Transactional outbox
 - [ ] Phase 7 — Webhooks
@@ -49,6 +49,7 @@ progress.
 | [docs/architecture.md](docs/architecture.md) | System architecture, diagrams, ERD, state machine, concurrency & idempotency strategy |
 | [docs/adr/](docs/adr) | Architecture Decision Records for the eight major design decisions |
 | [docs/database.md](docs/database.md) | Implemented schema, idempotency claim protocol, state machine, and test coverage (Phase 2) |
+| [docs/payments.md](docs/payments.md) | Payment API design decisions: authorize/capture semantics, MockProvider, test coverage (Phase 3) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally
@@ -60,6 +61,10 @@ python -m venv .venv && . .venv/Scripts/activate  # or source .venv/bin/activate
 pip install -e ".[dev]"
 alembic upgrade head
 pytest tests/
+
+# try it
+python scripts/seed_merchant.py "Demo Merchant"   # prints an API key, shown once
+uvicorn apps.api.main:app --reload                # http://localhost:8000/docs
 ```
 
 Further docs (`database.md`, `idempotency.md`, `concurrency.md`, `webhooks.md`,

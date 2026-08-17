@@ -10,9 +10,9 @@ discipline established in Phase 2/3).
 |---|---|---|
 | 1 | Architecture: diagrams, ERD, state machine, ADRs, roadmap | Done |
 | 2 | Domain models, migrations, constraints, state machine implementation, idempotency storage | Done |
-| 3 | Payment API: create/status/capture | Not started |
-| 4 | Provider abstraction + MockProvider failure modes | Not started |
-| 5 | Idempotency + concurrency implementation and tests | Not started |
+| 3 | Payment API: create/status/capture | Done |
+| 4 | Provider abstraction + MockProvider failure modes | Done (MockProvider only; Provider A/B real adapters deferred -- nothing depends on them yet) |
+| 5 | Idempotency + concurrency implementation and tests | Substantially done -- claim protocol built/tested in Phase 2, exercised end-to-end at the HTTP layer with a 100-concurrent-request test in Phase 3 |
 | 6 | Transactional outbox + worker | Not started |
 | 7 | Webhook processing (security, dedup, async apply) | Not started |
 | 8 | Refunds (partial/full, concurrency-safe) | Not started |
