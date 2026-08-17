@@ -11,6 +11,7 @@ from database.models import (
     PaymentIntent,
     PaymentMethod,
     ProviderTransaction,
+    ReconciliationReport,
     Refund,
     WebhookEvent,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "PaymentIntent",
     "PaymentMethod",
     "ProviderTransaction",
+    "ReconciliationReport",
     "Refund",
     "WebhookEvent",
     "get_engine",

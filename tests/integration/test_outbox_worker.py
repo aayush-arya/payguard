@@ -82,12 +82,18 @@ async def test_failed_dispatch_is_retried_and_eventually_succeeds(db_session):
     dispatcher = RecordingDispatcher()
     dispatcher.fail_counts[event.id] = 2
 
+    # Full jitter backoff can legitimately schedule a delay close to zero,
+    # so asserting available_at is still in the future *after* the call
+    # (and after a real DB round-trip) is flaky by construction. Instead,
+    # assert it's no earlier than "now" was *before* the call -- compute_backoff
+    # only ever adds a non-negative delay to the moment it runs.
+    before_call = datetime.now(UTC)
     first = await process_next(db_session, dispatcher)
     assert first == "PENDING"
     await db_session.refresh(event)
     assert event.attempt_count == 1
     assert event.failure_reason is not None
-    assert event.available_at > datetime.now(UTC)  # real backoff was scheduled
+    assert event.available_at >= before_call  # a real backoff was scheduled
 
     await _force_available_now(db_session, event.id)
     second = await process_next(db_session, dispatcher)

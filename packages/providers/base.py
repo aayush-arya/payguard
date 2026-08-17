@@ -47,3 +47,11 @@ class PaymentProvider(Protocol):
     ) -> ProviderResult: ...
 
     async def get_payment_status(self, provider_transaction_id: str) -> ProviderResult: ...
+
+    async def get_payment_status_by_idempotency_key(self, idempotency_key: str) -> ProviderResult:
+        """Reconciliation's entry point for the case get_payment_status()
+        can't handle: authorize() returned UNKNOWN with no
+        provider_transaction_id, so there is nothing to look up *by*
+        except the request's own idempotency key -- exactly what a real
+        PSP's idempotency-key lookup API is for (ADR-008)."""
+        ...

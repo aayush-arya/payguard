@@ -17,7 +17,7 @@ discipline established in Phase 2/3).
 | 7 | Webhook processing (security, dedup, async apply) | Done |
 | 8 | Refunds (partial/full, concurrency-safe) | Done |
 | 9 | Double-entry ledger + balance invariant | Done |
-| 10 | Reconciliation engine | Not started |
+| 10 | Reconciliation engine | Done |
 | 11 | Risk/fraud rule engine | Not started |
 | 12 | Observability: OpenTelemetry, Prometheus, structured logs | Not started |
 | 13 | React/TS/Tailwind dashboard | Not started |

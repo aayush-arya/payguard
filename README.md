@@ -30,7 +30,7 @@ progress.
 - [x] Phase 7 — Webhooks
 - [x] Phase 8 — Refunds
 - [x] Phase 9 — Ledger
-- [ ] Phase 10 — Reconciliation
+- [x] Phase 10 — Reconciliation
 - [ ] Phase 11 — Risk engine
 - [ ] Phase 12 — Observability
 - [ ] Phase 13 — Dashboard
@@ -54,6 +54,7 @@ progress.
 | [docs/webhooks.md](docs/webhooks.md) | Webhook threat model, signature/replay protection, dedup, and how effect-application wires into the outbox worker (Phase 7) |
 | [docs/refunds.md](docs/refunds.md) | Refund balance invariant, a real concurrency bug the tests caught and how it was fixed, idempotency reuse (Phase 8) |
 | [docs/ledger.md](docs/ledger.md) | Double-entry ledger design, why writes are tied to specific events not generic transitions, DB-level immutability trigger (Phase 9) |
+| [docs/reconciliation.md](docs/reconciliation.md) | Resolving UNKNOWN payments by asking the provider directly, idempotency-key lookup, Demo 3 end to end (Phase 10) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

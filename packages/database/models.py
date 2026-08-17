@@ -386,3 +386,36 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = _created_at()
 
     __table_args__ = (Index("ix_audit_logs_merchant_created", "merchant_id", "created_at"),)
+
+
+class ReconciliationReport(Base):
+    """Append-only record of one reconciliation pass against one payment
+    (ADR-008, Phase 10). Not part of the original Phase 2 ERD -- added when
+    Phase 10 actually needed somewhere to record "we asked the provider what
+    happened and here's what we found," matching every other append-only
+    audit table in this schema (payment_events, webhook_events)."""
+
+    __tablename__ = "reconciliation_reports"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    payment_intent_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("payment_intents.id"), nullable=False
+    )
+    result: Mapped[str] = mapped_column(String, nullable=False)
+    internal_status: Mapped[str] = mapped_column(String, nullable=False)
+    provider_status: Mapped[str | None] = mapped_column(String, nullable=True)
+    details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = _created_at()
+
+    __table_args__ = (
+        CheckConstraint(
+            "result IN ("
+            "'MATCHED', 'RESOLVED_SUCCEEDED', 'RESOLVED_FAILED', 'STILL_UNKNOWN', "
+            "'MISSING_PROVIDER_TRANSACTION', 'MISSING_INTERNAL_TRANSACTION', "
+            "'AMOUNT_MISMATCH', 'CURRENCY_MISMATCH'"
+            ")",
+            name="ck_reconciliation_reports_result",
+        ),
+        Index("ix_reconciliation_reports_payment_intent_id", "payment_intent_id"),
+        Index("ix_reconciliation_reports_created_at", "created_at"),
+    )
