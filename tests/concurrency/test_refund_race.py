@@ -11,6 +11,7 @@ import collections
 import uuid
 
 from database.models import PaymentIntent, Refund
+from ledger.invariants import find_unbalanced_ledger_transactions, global_ledger_balance
 from sqlalchemy import func, select
 
 CONCURRENT_REFUNDS = 10
@@ -88,6 +89,13 @@ async def test_concurrent_refunds_never_exceed_payment_amount(api_client, mercha
             f"({PAYMENT_AMOUNT}), regardless of how many requests raced for it"
         )
         assert succeeded_refund_count == 3
+
+        # Every one of the 3 concurrent successful refunds wrote its own
+        # ledger entry pair (packages/ledger); the invariant must hold even
+        # though these writes genuinely raced each other.
+        total_debits, total_credits = await global_ledger_balance(session)
+        assert total_debits == total_credits
+        assert await find_unbalanced_ledger_transactions(session) == []
 
 
 async def test_concurrent_identical_refund_requests_produce_exactly_one_refund(

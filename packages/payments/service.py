@@ -42,6 +42,7 @@ from idempotency.service import (
     compute_fingerprint,
     fail_idempotency_key,
 )
+from ledger.service import record_payment_settled, record_refund_settled
 from providers.base import AuthorizeRequest, PaymentProvider, ProviderOutcome
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -349,6 +350,15 @@ async def capture_payment(
                 await apply_transition(
                     session, intent, PaymentStatus.SUCCEEDED, Actor.API, "payment.succeeded"
                 )
+                # The payment just newly settled -- record it once, here,
+                # not inside apply_transition() itself: that function is
+                # also used for REFUND_PENDING -> SUCCEEDED (a partial
+                # refund leaving the payment "still successful"), which is
+                # NOT a new settlement and must not double-record it
+                # (docs/ledger.md).
+                await record_payment_settled(
+                    session, payment_intent_id=intent.id, amount_minor=intent.amount_minor
+                )
             elif result.outcome is ProviderOutcome.UNKNOWN:
                 await apply_transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
             else:
@@ -485,6 +495,16 @@ async def refund_payment(
         assert refund is not None
 
         refund.status = "SUCCEEDED" if result.outcome is ProviderOutcome.SUCCEEDED else "FAILED"
+        if refund.status == "SUCCEEDED":
+            # This specific refund settled -- record it once, here. This is
+            # independent of the payment-level aggregate settlement below
+            # (which only fires for whichever refund happens to be "last
+            # pending"): every successfully refunded amount gets its own
+            # ledger entry regardless of how many sibling refunds are still
+            # in flight.
+            await record_refund_settled(
+                session, payment_intent_id=intent.id, amount_minor=refund.amount_minor
+            )
         await session.flush()
 
         # Settle the payment-level status only once no sibling refund is

@@ -16,7 +16,7 @@ discipline established in Phase 2/3).
 | 6 | Transactional outbox + worker | Done |
 | 7 | Webhook processing (security, dedup, async apply) | Done |
 | 8 | Refunds (partial/full, concurrency-safe) | Done |
-| 9 | Double-entry ledger + balance invariant | Not started |
+| 9 | Double-entry ledger + balance invariant | Done |
 | 10 | Reconciliation engine | Not started |
 | 11 | Risk/fraud rule engine | Not started |
 | 12 | Observability: OpenTelemetry, Prometheus, structured logs | Not started |

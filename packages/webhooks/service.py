@@ -24,6 +24,7 @@ from collections.abc import Awaitable, Callable
 
 from database.models import OutboxEvent, PaymentAttempt, PaymentIntent, ProviderTransaction, WebhookEvent
 from domain.state_machine import Actor, PaymentStatus, is_valid_payment_transition
+from ledger.service import record_payment_settled
 from payments.service import apply_transition, lock_payment
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -112,6 +113,13 @@ async def _handle_payment_outcome(
 
     event_type_suffix = target_status.value.lower()
     await apply_transition(session, locked, target_status, Actor.WEBHOOK, f"webhook.{event_type_suffix}")
+    if target_status is PaymentStatus.SUCCEEDED:
+        # The payment just newly settled via webhook confirmation rather
+        # than an explicit capture call -- record it exactly like
+        # capture_payment() does for the synchronous path. This can't
+        # double-fire: the "already applied" no-op branch above returns
+        # before reaching here if the payment was already SUCCEEDED.
+        await record_payment_settled(session, payment_intent_id=locked.id, amount_minor=locked.amount_minor)
     webhook_event.processing_status = "PROCESSED"
 
 
@@ -124,9 +132,11 @@ async def _handle_payment_failed(session: AsyncSession, webhook_event: WebhookEv
 
 
 # refund.succeeded / refund.failed are recognized wire event types (the
-# provider may send them) but have no handler yet -- refunds don't exist
-# until Phase 8. They fall through to the IGNORED branch below, acknowledged
-# and recorded, not dropped silently and not retried forever.
+# provider may send them) but still have no handler: refunds (Phase 8) are
+# only settled synchronously via POST /v1/payments/{id}/refunds today, not
+# confirmed asynchronously the way payment.succeeded is. They fall through
+# to the IGNORED branch below, acknowledged and recorded, not dropped
+# silently and not retried forever.
 _EVENT_HANDLERS: dict[str, Callable[[AsyncSession, WebhookEvent], Awaitable[None]]] = {
     "payment.succeeded": _handle_payment_succeeded,
     "payment.failed": _handle_payment_failed,
