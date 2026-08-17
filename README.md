@@ -25,8 +25,8 @@ progress.
 - [x] Phase 2 — Domain + Database
 - [x] Phase 3 — Payment API
 - [x] Phase 4 — Provider abstraction (MockProvider only; real adapters deferred)
-- [ ] Phase 5 — Idempotency + concurrency
-- [ ] Phase 6 — Transactional outbox
+- [x] Phase 5 — Idempotency + concurrency (built/tested in Phase 2, exercised end-to-end in Phase 3)
+- [x] Phase 6 — Transactional outbox
 - [ ] Phase 7 — Webhooks
 - [ ] Phase 8 — Refunds
 - [ ] Phase 9 — Ledger
@@ -50,6 +50,7 @@ progress.
 | [docs/adr/](docs/adr) | Architecture Decision Records for the eight major design decisions |
 | [docs/database.md](docs/database.md) | Implemented schema, idempotency claim protocol, state machine, and test coverage (Phase 2) |
 | [docs/payments.md](docs/payments.md) | Payment API design decisions: authorize/capture semantics, MockProvider, test coverage (Phase 3) |
+| [docs/outbox.md](docs/outbox.md) | Outbox worker design: retry/backoff, dead-lettering, the one deliberate lock/network-call tradeoff in the codebase (Phase 6) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally
@@ -65,6 +66,7 @@ pytest tests/
 # try it
 python scripts/seed_merchant.py "Demo Merchant"   # prints an API key, shown once
 uvicorn apps.api.main:app --reload                # http://localhost:8000/docs
+python apps/worker/main.py                        # separate terminal: processes outbox events
 ```
 
 Further docs (`database.md`, `idempotency.md`, `concurrency.md`, `webhooks.md`,
