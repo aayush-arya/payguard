@@ -15,7 +15,7 @@ discipline established in Phase 2/3).
 | 5 | Idempotency + concurrency implementation and tests | Substantially done -- claim protocol built/tested in Phase 2, exercised end-to-end at the HTTP layer with a 100-concurrent-request test in Phase 3 |
 | 6 | Transactional outbox + worker | Done |
 | 7 | Webhook processing (security, dedup, async apply) | Done |
-| 8 | Refunds (partial/full, concurrency-safe) | Not started |
+| 8 | Refunds (partial/full, concurrency-safe) | Done |
 | 9 | Double-entry ledger + balance invariant | Not started |
 | 10 | Reconciliation engine | Not started |
 | 11 | Risk/fraud rule engine | Not started |

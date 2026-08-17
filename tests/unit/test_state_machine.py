@@ -26,6 +26,7 @@ ALLOWED_PAYMENT_TRANSITIONS = [
     (PaymentStatus.SUCCEEDED, PaymentStatus.REFUND_PENDING, None),
     (PaymentStatus.REFUND_PENDING, PaymentStatus.REFUNDED, None),
     (PaymentStatus.REFUND_PENDING, PaymentStatus.REFUND_FAILED, None),
+    (PaymentStatus.REFUND_PENDING, PaymentStatus.SUCCEEDED, None),  # partial refund succeeded
     (PaymentStatus.REFUND_FAILED, PaymentStatus.REFUND_PENDING, None),
 ]
 

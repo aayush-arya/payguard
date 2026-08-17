@@ -104,6 +104,32 @@ class MockProvider:
     async def refund(
         self, provider_transaction_id: str, amount_minor: int, idempotency_key: str
     ) -> ProviderResult:
+        # refund() has no token to carry a scenario marker, so it's read
+        # from the idempotency_key instead -- e.g. a test choosing
+        # f"refund-declined-{uuid4()}" gets a declined refund deterministically,
+        # same mechanism as authorize()'s token markers.
+        scenario = self._scenario_for(idempotency_key)
+        if scenario == _DECLINED:
+            return ProviderResult(
+                outcome=ProviderOutcome.DECLINED,
+                provider_transaction_id=provider_transaction_id,
+                raw_status="refund_declined",
+                raw_response={},
+            )
+        if scenario == _TEMPORARY_FAILURE:
+            return ProviderResult(
+                outcome=ProviderOutcome.TEMPORARY_FAILURE,
+                provider_transaction_id=provider_transaction_id,
+                raw_status="provider_unavailable",
+                raw_response={},
+            )
+        if scenario in (_TIMEOUT, _UNKNOWN_RESULT):
+            return ProviderResult(
+                outcome=ProviderOutcome.UNKNOWN,
+                provider_transaction_id=provider_transaction_id,
+                raw_status="no_response_received",
+                raw_response={},
+            )
         return ProviderResult(
             outcome=ProviderOutcome.SUCCEEDED,
             provider_transaction_id=provider_transaction_id,

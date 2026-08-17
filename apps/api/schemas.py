@@ -34,3 +34,15 @@ class PaymentResponse(BaseModel):
     merchant_reference: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class RefundCreateRequest(BaseModel):
+    amount: int = Field(gt=0, description="Amount in minor units (e.g. cents).")
+
+
+class RefundResponse(BaseModel):
+    id: UUID
+    payment_id: UUID
+    amount: int
+    status: str
+    created_at: datetime

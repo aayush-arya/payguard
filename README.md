@@ -28,7 +28,7 @@ progress.
 - [x] Phase 5 — Idempotency + concurrency (built/tested in Phase 2, exercised end-to-end in Phase 3)
 - [x] Phase 6 — Transactional outbox
 - [x] Phase 7 — Webhooks
-- [ ] Phase 8 — Refunds
+- [x] Phase 8 — Refunds
 - [ ] Phase 9 — Ledger
 - [ ] Phase 10 — Reconciliation
 - [ ] Phase 11 — Risk engine
@@ -52,6 +52,7 @@ progress.
 | [docs/payments.md](docs/payments.md) | Payment API design decisions: authorize/capture semantics, MockProvider, test coverage (Phase 3) |
 | [docs/outbox.md](docs/outbox.md) | Outbox worker design: retry/backoff, dead-lettering, the one deliberate lock/network-call tradeoff in the codebase (Phase 6) |
 | [docs/webhooks.md](docs/webhooks.md) | Webhook threat model, signature/replay protection, dedup, and how effect-application wires into the outbox worker (Phase 7) |
+| [docs/refunds.md](docs/refunds.md) | Refund balance invariant, a real concurrency bug the tests caught and how it was fixed, idempotency reuse (Phase 8) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

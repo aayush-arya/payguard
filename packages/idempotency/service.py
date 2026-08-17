@@ -168,6 +168,7 @@ async def complete_idempotency_key(
     payment_intent_id: uuid.UUID | None,
     response_status: int,
     response_body: dict,
+    refund_id: uuid.UUID | None = None,
 ) -> None:
     await session.execute(
         update(IdempotencyKey)
@@ -175,6 +176,7 @@ async def complete_idempotency_key(
         .values(
             status="COMPLETED",
             payment_intent_id=payment_intent_id,
+            refund_id=refund_id,
             response_status=response_status,
             response_body=response_body,
         )

@@ -5,12 +5,18 @@ from uuid import UUID
 from database.models import Merchant
 from domain.errors import PayGuardError
 from fastapi import APIRouter, Depends, Header, Request, Response
-from payments.service import capture_payment, create_payment, get_payment, serialize_payment
+from payments.service import (
+    capture_payment,
+    create_payment,
+    get_payment,
+    refund_payment,
+    serialize_payment,
+)
 from providers.base import PaymentProvider
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.dependencies import get_current_merchant, get_db_session, get_provider
-from apps.api.schemas import PaymentCreateRequest
+from apps.api.schemas import PaymentCreateRequest, RefundCreateRequest
 
 router = APIRouter(prefix="/v1/payments", tags=["payments"])
 
@@ -78,6 +84,33 @@ async def capture_payment_endpoint(
         payment_id=payment_id,
         idempotency_key=key,
         raw_body=raw_body,
+        provider=provider,
+    )
+    response.status_code = status_code
+    return body
+
+
+@router.post("/{payment_id}/refunds", status_code=201, response_model=None)
+async def create_refund_endpoint(
+    payment_id: UUID,
+    payload: RefundCreateRequest,
+    request: Request,
+    response: Response,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    merchant: Merchant = Depends(get_current_merchant),
+    db_session: AsyncSession = Depends(get_db_session),
+    provider: PaymentProvider = Depends(get_provider),
+) -> dict:
+    key = _require_idempotency_key(idempotency_key)
+    raw_body = await request.body()
+
+    status_code, body = await refund_payment(
+        db_session,
+        merchant_id=merchant.id,
+        payment_id=payment_id,
+        idempotency_key=key,
+        raw_body=raw_body,
+        amount_minor=payload.amount,
         provider=provider,
     )
     response.status_code = status_code

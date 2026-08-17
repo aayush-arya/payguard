@@ -73,8 +73,21 @@ _PAYMENT_TRANSITIONS: dict[PaymentStatus, tuple[_Transition, ...]] = {
     ),
     PaymentStatus.SUCCEEDED: (_Transition(PaymentStatus.REFUND_PENDING),),
     PaymentStatus.REFUND_PENDING: (
+        # Fully refunded (sum of successful refunds == payment amount): terminal.
         _Transition(PaymentStatus.REFUNDED),
+        # This refund attempt failed at the provider: retryable via
+        # REFUND_FAILED -> REFUND_PENDING below.
         _Transition(PaymentStatus.REFUND_FAILED),
+        # A *partial* refund succeeded but did not exhaust the payment
+        # amount -- the payment is still fundamentally successful, just with
+        # some money returned. How much has been refunded is a derived fact
+        # from summing the refunds table (docs/refunds.md), not something
+        # that needs its own top-level status; SUCCEEDED is reused rather
+        # than adding a PARTIALLY_REFUNDED status (Phase 8 addition to the
+        # Phase 1 transition table -- multi-partial-refund flows genuinely
+        # need this leg, which wasn't exercised by anything before refunds
+        # existed).
+        _Transition(PaymentStatus.SUCCEEDED),
     ),
     PaymentStatus.REFUND_FAILED: (_Transition(PaymentStatus.REFUND_PENDING),),
     PaymentStatus.FAILED: (),
