@@ -14,7 +14,7 @@ discipline established in Phase 2/3).
 | 4 | Provider abstraction + MockProvider failure modes | Done (MockProvider only; Provider A/B real adapters deferred -- nothing depends on them yet) |
 | 5 | Idempotency + concurrency implementation and tests | Substantially done -- claim protocol built/tested in Phase 2, exercised end-to-end at the HTTP layer with a 100-concurrent-request test in Phase 3 |
 | 6 | Transactional outbox + worker | Done |
-| 7 | Webhook processing (security, dedup, async apply) | Not started |
+| 7 | Webhook processing (security, dedup, async apply) | Done |
 | 8 | Refunds (partial/full, concurrency-safe) | Not started |
 | 9 | Double-entry ledger + balance invariant | Not started |
 | 10 | Reconciliation engine | Not started |

@@ -8,11 +8,12 @@ from providers import MockProvider
 from sqlalchemy import text
 
 from apps.api.errors import install_error_handlers
-from apps.api.routers import payments
+from apps.api.routers import payments, webhooks
 
 app = FastAPI(title="PayGuard API", version="0.1.0")
 install_error_handlers(app)
 app.include_router(payments.router)
+app.include_router(webhooks.router)
 
 # MockProvider holds no I/O resources (its "connection" is an in-memory
 # dict), so it needs no async startup/shutdown -- a plain module-level

@@ -34,12 +34,17 @@ MAX_DELAY_SECONDS = 300.0
 
 
 class OutboxDispatcher(Protocol):
-    async def dispatch(self, event: OutboxEvent) -> None:
-        """Deliver the event. Raise any exception to indicate failure --
-        the worker classifies nothing about *why* it failed, since at this
-        layer every failure is transient-by-default (retry with backoff
-        until MAX_ATTEMPTS, then dead-letter). Unlike payment provider
-        errors, there's no equivalent of a permanent DECLINED here."""
+    async def dispatch(self, session: AsyncSession, event: OutboxEvent) -> None:
+        """Deliver the event. `session` is the same session/transaction
+        process_next() is holding the event's row lock under -- a dispatcher
+        that needs to mutate the database (e.g. applying a webhook's effect)
+        does so through this session, not a session of its own, so its
+        writes commit atomically with the outbox event being marked
+        PROCESSED. Raise any exception to indicate failure -- the worker
+        classifies nothing about *why* it failed, since at this layer every
+        failure is transient-by-default (retry with backoff until
+        MAX_ATTEMPTS, then dead-letter). Unlike payment provider errors,
+        there's no equivalent of a permanent DECLINED here."""
         ...
 
 
@@ -74,7 +79,7 @@ async def process_next(session: AsyncSession, dispatcher: OutboxDispatcher) -> s
         return None
 
     try:
-        await dispatcher.dispatch(event)
+        await dispatcher.dispatch(session, event)
     except Exception as exc:
         event.attempt_count += 1
         event.failure_reason = str(exc)[:500]

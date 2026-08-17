@@ -1,3 +1,17 @@
-from payments.service import capture_payment, create_payment, get_payment, serialize_payment
+from payments.service import (
+    apply_transition,
+    capture_payment,
+    create_payment,
+    get_payment,
+    lock_payment,
+    serialize_payment,
+)
 
-__all__ = ["capture_payment", "create_payment", "get_payment", "serialize_payment"]
+__all__ = [
+    "apply_transition",
+    "capture_payment",
+    "create_payment",
+    "get_payment",
+    "lock_payment",
+    "serialize_payment",
+]

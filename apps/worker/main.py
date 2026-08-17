@@ -44,10 +44,10 @@ BATCH_SIZE = 50
 
 async def main() -> None:
     from database.session import get_sessionmaker
-    from outbox import LoggingDispatcher, run_batch
+    from outbox import WebhookEffectDispatcher, run_batch
 
     sessionmaker = get_sessionmaker()
-    dispatcher = LoggingDispatcher()
+    dispatcher = WebhookEffectDispatcher()
     logger.info(
         "outbox worker starting, poll_interval=%ss idle_interval=%ss",
         POLL_INTERVAL_SECONDS,

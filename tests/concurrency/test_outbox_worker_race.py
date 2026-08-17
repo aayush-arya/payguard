@@ -21,7 +21,7 @@ class ThreadSafeRecordingDispatcher:
     def __init__(self) -> None:
         self.dispatched_ids: list[uuid.UUID] = []
 
-    async def dispatch(self, event: OutboxEvent) -> None:
+    async def dispatch(self, session, event: OutboxEvent) -> None:
         self.dispatched_ids.append(event.id)
 
 

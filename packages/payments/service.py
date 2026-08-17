@@ -64,7 +64,7 @@ def serialize_payment(intent: PaymentIntent) -> dict:
     }
 
 
-async def _lock_payment(
+async def lock_payment(
     session: AsyncSession, payment_id: uuid.UUID, merchant_id: uuid.UUID
 ) -> PaymentIntent | None:
     stmt = (
@@ -75,7 +75,7 @@ async def _lock_payment(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def _transition(
+async def apply_transition(
     session: AsyncSession,
     intent: PaymentIntent,
     to_status: PaymentStatus,
@@ -178,9 +178,9 @@ async def create_payment(
         # Fresh row lock before the provider call; released again before it
         # (docs/architecture.md section 8 -- never hold a DB lock across a
         # network call).
-        intent = await _lock_payment(session, intent.id, merchant_id)
+        intent = await lock_payment(session, intent.id, merchant_id)
         assert intent is not None
-        await _transition(session, intent, PaymentStatus.PROCESSING, Actor.API, "payment.processing")
+        await apply_transition(session, intent, PaymentStatus.PROCESSING, Actor.API, "payment.processing")
         await session.commit()
 
         result = await provider.authorize(
@@ -192,7 +192,7 @@ async def create_payment(
             )
         )
 
-        intent = await _lock_payment(session, intent.id, merchant_id)
+        intent = await lock_payment(session, intent.id, merchant_id)
         assert intent is not None
 
         attempt_number = (
@@ -228,9 +228,9 @@ async def create_payment(
         # blind inline retry (ADR-005). SUCCEEDED means "authorized"; the
         # payment stays PROCESSING until capture_payment() finalizes it.
         if result.outcome is ProviderOutcome.DECLINED:
-            await _transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.failed")
+            await apply_transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.failed")
         elif result.outcome is ProviderOutcome.UNKNOWN:
-            await _transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
+            await apply_transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
 
         response_status = 201
         response_body = serialize_payment(intent)
@@ -295,7 +295,7 @@ async def capture_payment(
 
     key_row_id = claim.key_row.id
     try:
-        intent = await _lock_payment(session, payment_id, merchant_id)
+        intent = await lock_payment(session, payment_id, merchant_id)
         if intent is None:
             raise PayGuardError("PAYMENT_NOT_FOUND", f"No payment found with id {payment_id}.")
 
@@ -329,11 +329,13 @@ async def capture_payment(
             result = await provider.capture(provider_txn.provider_transaction_id, intent.amount_minor)
 
             if result.outcome is ProviderOutcome.SUCCEEDED:
-                await _transition(session, intent, PaymentStatus.SUCCEEDED, Actor.API, "payment.succeeded")
+                await apply_transition(
+                    session, intent, PaymentStatus.SUCCEEDED, Actor.API, "payment.succeeded"
+                )
             elif result.outcome is ProviderOutcome.UNKNOWN:
-                await _transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
+                await apply_transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
             else:
-                await _transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.failed")
+                await apply_transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.failed")
 
             response_status, response_body = 200, serialize_payment(intent)
 

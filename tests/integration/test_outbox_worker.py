@@ -18,7 +18,7 @@ class RecordingDispatcher:
         self.fail_counts: dict[uuid.UUID, int] = {}
         self.always_fail_ids: set[uuid.UUID] = set()
 
-    async def dispatch(self, event: OutboxEvent) -> None:
+    async def dispatch(self, session, event: OutboxEvent) -> None:
         if event.id in self.always_fail_ids:
             raise RuntimeError("simulated permanent dispatch failure")
         remaining = self.fail_counts.get(event.id, 0)

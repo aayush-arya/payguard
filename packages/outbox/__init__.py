@@ -1,4 +1,4 @@
-from outbox.dispatchers import LoggingDispatcher
+from outbox.dispatchers import LoggingDispatcher, WebhookEffectDispatcher
 from outbox.worker import (
     MAX_ATTEMPTS,
     OutboxDispatcher,
@@ -12,6 +12,7 @@ __all__ = [
     "MAX_ATTEMPTS",
     "LoggingDispatcher",
     "OutboxDispatcher",
+    "WebhookEffectDispatcher",
     "compute_backoff",
     "process_next",
     "requeue_dead_letter",

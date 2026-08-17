@@ -27,7 +27,7 @@ progress.
 - [x] Phase 4 — Provider abstraction (MockProvider only; real adapters deferred)
 - [x] Phase 5 — Idempotency + concurrency (built/tested in Phase 2, exercised end-to-end in Phase 3)
 - [x] Phase 6 — Transactional outbox
-- [ ] Phase 7 — Webhooks
+- [x] Phase 7 — Webhooks
 - [ ] Phase 8 — Refunds
 - [ ] Phase 9 — Ledger
 - [ ] Phase 10 — Reconciliation
@@ -51,6 +51,7 @@ progress.
 | [docs/database.md](docs/database.md) | Implemented schema, idempotency claim protocol, state machine, and test coverage (Phase 2) |
 | [docs/payments.md](docs/payments.md) | Payment API design decisions: authorize/capture semantics, MockProvider, test coverage (Phase 3) |
 | [docs/outbox.md](docs/outbox.md) | Outbox worker design: retry/backoff, dead-lettering, the one deliberate lock/network-call tradeoff in the codebase (Phase 6) |
+| [docs/webhooks.md](docs/webhooks.md) | Webhook threat model, signature/replay protection, dedup, and how effect-application wires into the outbox worker (Phase 7) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally
@@ -69,10 +70,10 @@ uvicorn apps.api.main:app --reload                # http://localhost:8000/docs
 python apps/worker/main.py                        # separate terminal: processes outbox events
 ```
 
-Further docs (`database.md`, `idempotency.md`, `concurrency.md`, `webhooks.md`,
-`reconciliation.md`, `security.md`, `observability.md`, `testing.md`,
-`deployment.md`, `failure-modes.md`) will be added as their corresponding phases land,
-so they describe real, built behavior rather than aspirational design.
+Further docs (`idempotency.md`, `concurrency.md`, `reconciliation.md`, `security.md`,
+`observability.md`, `testing.md`, `deployment.md`, `failure-modes.md`) will be added
+as their corresponding phases land, so they describe real, built behavior rather than
+aspirational design.
 
 ## License
 
