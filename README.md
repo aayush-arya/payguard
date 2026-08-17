@@ -22,7 +22,7 @@ for the full system design and [`docs/roadmap.md`](docs/roadmap.md) for phase-by
 progress.
 
 - [x] Phase 1 — Architecture
-- [ ] Phase 2 — Domain + Database
+- [x] Phase 2 — Domain + Database
 - [ ] Phase 3 — Payment API
 - [ ] Phase 4 — Provider abstraction
 - [ ] Phase 5 — Idempotency + concurrency
@@ -48,7 +48,19 @@ progress.
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | System architecture, diagrams, ERD, state machine, concurrency & idempotency strategy |
 | [docs/adr/](docs/adr) | Architecture Decision Records for the eight major design decisions |
+| [docs/database.md](docs/database.md) | Implemented schema, idempotency claim protocol, state machine, and test coverage (Phase 2) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
+
+## Running locally
+
+```bash
+docker compose up -d postgres redis
+cp .env.example .env
+python -m venv .venv && . .venv/Scripts/activate  # or source .venv/bin/activate on macOS/Linux
+pip install -e ".[dev]"
+alembic upgrade head
+pytest tests/
+```
 
 Further docs (`database.md`, `idempotency.md`, `concurrency.md`, `webhooks.md`,
 `reconciliation.md`, `security.md`, `observability.md`, `testing.md`,

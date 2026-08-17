@@ -9,7 +9,7 @@ discipline established in Phase 2/3).
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Architecture: diagrams, ERD, state machine, ADRs, roadmap | Done |
-| 2 | Domain models, migrations, constraints, state machine implementation, idempotency storage | Not started |
+| 2 | Domain models, migrations, constraints, state machine implementation, idempotency storage | Done |
 | 3 | Payment API: create/status/capture | Not started |
 | 4 | Provider abstraction + MockProvider failure modes | Not started |
 | 5 | Idempotency + concurrency implementation and tests | Not started |
