@@ -35,7 +35,7 @@ progress.
 - [x] Phase 12 — Observability
 - [x] Phase 13 — Dashboard
 - [x] Phase 14 — Chaos/failure testing
-- [ ] Phase 15 — Load testing
+- [x] Phase 15 — Load testing
 - [ ] Phase 16 — Security
 - [ ] Phase 17 — Docker/Kubernetes
 - [ ] Phase 18 — Terraform/Cloud
@@ -59,6 +59,7 @@ progress.
 | [docs/observability.md](docs/observability.md) | Structured logging, Prometheus metrics, and hand-placed OpenTelemetry tracing — including two OTel SDK gotchas the tests caught (Phase 12) |
 | [docs/dashboard.md](docs/dashboard.md) | React/TS/Tailwind merchant dashboard, the four backend endpoints it needed, and a real routing bug the manual browser pass caught (Phase 13) |
 | [docs/chaos.md](docs/chaos.md) | Seeded chaos injection, its deliberate scope boundary, the narrated demo script, and a state-machine assumption the e2e test's first draft got wrong (Phase 14) |
+| [docs/load-testing.md](docs/load-testing.md) | k6 steady-throughput and idempotency-storm scenarios, a real single-worker latency finding, and a k6-JSON-shape bug the report tooling caught (Phase 15) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

@@ -22,7 +22,7 @@ discipline established in Phase 2/3).
 | 12 | Observability: OpenTelemetry, Prometheus, structured logs | Done |
 | 13 | React/TS/Tailwind dashboard | Done |
 | 14 | Chaos/failure simulator + demo scenarios | Done |
-| 15 | Load testing (k6) | Not started |
+| 15 | Load testing (k6) | Done |
 | 16 | Security: threat model, authn/authz hardening, rate limiting | Not started |
 | 17 | Docker + Kubernetes | Not started |
 | 18 | Terraform / optional AWS deployment | Not started |
