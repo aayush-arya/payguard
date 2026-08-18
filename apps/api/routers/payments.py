@@ -39,6 +39,7 @@ async def create_payment_endpoint(
 ) -> dict:
     key = _require_idempotency_key(idempotency_key)
     raw_body = await request.body()
+    customer_ip = payload.customer_ip or (request.client.host if request.client else None)
 
     status_code, body = await create_payment(
         db_session,
@@ -50,6 +51,9 @@ async def create_payment_endpoint(
         merchant_reference=payload.merchant_reference,
         payment_token=payload.payment_method.token,
         provider=provider,
+        billing_country=payload.billing_country,
+        shipping_country=payload.shipping_country,
+        customer_ip=customer_ip,
     )
     response.status_code = status_code
     return body

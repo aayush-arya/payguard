@@ -25,6 +25,7 @@ from __future__ import annotations
 import uuid
 
 from database.models import (
+    AuditLog,
     IdempotencyKey,
     OutboxEvent,
     PaymentAttempt,
@@ -44,6 +45,7 @@ from idempotency.service import (
 )
 from ledger.service import record_payment_settled, record_refund_settled
 from providers.base import AuthorizeRequest, PaymentProvider, ProviderOutcome
+from risk.service import RiskLevel, assess_payment_risk
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -153,6 +155,9 @@ async def create_payment(
     merchant_reference: str | None,
     payment_token: str,
     provider: PaymentProvider,
+    billing_country: str | None = None,
+    shipping_country: str | None = None,
+    customer_ip: str | None = None,
 ) -> tuple[int, dict]:
     fingerprint = compute_fingerprint("POST", "/v1/payments", raw_body)
     claim = await claim_idempotency_key(
@@ -210,6 +215,47 @@ async def create_payment(
         assert intent is not None
         await apply_transition(session, intent, PaymentStatus.PROCESSING, Actor.API, "payment.processing")
         await session.commit()
+
+        risk_assessment = await assess_payment_risk(
+            session,
+            merchant_id=merchant_id,
+            amount_minor=amount_minor,
+            billing_country=billing_country,
+            shipping_country=shipping_country,
+            customer_ip=customer_ip,
+        )
+        session.add(
+            AuditLog(
+                merchant_id=merchant_id,
+                actor="RISK_ENGINE",
+                action="payment.risk_assessed",
+                audit_metadata={"payment_id": str(intent.id), **risk_assessment.as_dict()},
+            )
+        )
+        await session.commit()
+
+        if risk_assessment.level is RiskLevel.BLOCK:
+            # Never call the provider for a blocked payment -- there is
+            # nothing to authorize, and no PaymentAttempt/ProviderTransaction
+            # is recorded for the same reason capture_payment() records
+            # nothing when there's no authorization to act on: we genuinely
+            # never asked (docs/risk.md).
+            intent = await lock_payment(session, intent.id, merchant_id)
+            assert intent is not None
+            await apply_transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.blocked")
+            response_status = 201
+            response_body = serialize_payment(intent)
+            key_row = await session.get(IdempotencyKey, key_row_id)
+            assert key_row is not None
+            await complete_idempotency_key(
+                session,
+                key_row,
+                payment_intent_id=intent.id,
+                response_status=response_status,
+                response_body=response_body,
+            )
+            await session.commit()
+            return response_status, response_body
 
         result = await provider.authorize(
             AuthorizeRequest(

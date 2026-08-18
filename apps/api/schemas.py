@@ -17,6 +17,12 @@ class PaymentCreateRequest(BaseModel):
     currency: str = Field(min_length=3, max_length=3)
     merchant_reference: str | None = None
     payment_method: PaymentMethodIn
+    # All optional -- feed the risk engine (packages/risk) when a merchant's
+    # checkout flow has them, but nothing requires them. Omitting all three
+    # just means those signals never fire.
+    billing_country: str | None = Field(default=None, description="ISO 3166-1 alpha-2, e.g. 'US'.")
+    shipping_country: str | None = Field(default=None, description="ISO 3166-1 alpha-2, e.g. 'US'.")
+    customer_ip: str | None = None
 
     @field_validator("currency")
     @classmethod
