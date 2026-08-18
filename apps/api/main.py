@@ -23,12 +23,23 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 from database.session import get_engine  # noqa: E402
-from fastapi import FastAPI, Request  # noqa: E402
+from fastapi import FastAPI, Request, Response  # noqa: E402
+from observability import (  # noqa: E402
+    bind_context,
+    configure_logging,
+    configure_tracing,
+    get_tracer,
+    render_latest,
+)
 from providers import MockProvider  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from apps.api.errors import install_error_handlers  # noqa: E402
 from apps.api.routers import payments, refunds, webhooks  # noqa: E402
+
+configure_logging()
+configure_tracing()
+_tracer = get_tracer("payguard.api")
 
 app = FastAPI(title="PayGuard API", version="0.1.0")
 install_error_handlers(app)
@@ -45,9 +56,21 @@ app.state.provider = MockProvider()
 
 @app.middleware("http")
 async def _request_id_middleware(request: Request, call_next):
-    request.state.request_id = f"req_{uuid.uuid4().hex}"
-    response = await call_next(request)
-    response.headers["X-Request-Id"] = request.state.request_id
+    request_id = f"req_{uuid.uuid4().hex}"
+    request.state.request_id = request_id
+    # Every log line and every child span emitted anywhere during this
+    # request's handling -- including deep inside packages/payments,
+    # packages/webhooks, etc. -- automatically carries request_id, without
+    # any of those modules importing anything request-scoped.
+    with (
+        bind_context(request_id=request_id),
+        _tracer.start_as_current_span(
+            "http.request",
+            attributes={"http.method": request.method, "http.path": request.url.path},
+        ),
+    ):
+        response = await call_next(request)
+    response.headers["X-Request-Id"] = request_id
     return response
 
 
@@ -61,3 +84,9 @@ async def ready() -> dict:
     async with get_engine().connect() as conn:
         await conn.execute(text("SELECT 1"))
     return {"status": "ready"}
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    body, content_type = render_latest()
+    return Response(content=body, media_type=content_type)

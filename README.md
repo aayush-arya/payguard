@@ -32,7 +32,7 @@ progress.
 - [x] Phase 9 — Ledger
 - [x] Phase 10 — Reconciliation
 - [x] Phase 11 — Risk engine
-- [ ] Phase 12 — Observability
+- [x] Phase 12 — Observability
 - [ ] Phase 13 — Dashboard
 - [ ] Phase 14 — Chaos/failure testing
 - [ ] Phase 15 — Load testing
@@ -56,6 +56,7 @@ progress.
 | [docs/ledger.md](docs/ledger.md) | Double-entry ledger design, why writes are tied to specific events not generic transitions, DB-level immutability trigger (Phase 9) |
 | [docs/reconciliation.md](docs/reconciliation.md) | Resolving UNKNOWN payments by asking the provider directly, idempotency-key lookup, Demo 3 end to end (Phase 10) |
 | [docs/risk.md](docs/risk.md) | Deterministic rule-based risk signals, scoring, and where BLOCK plugs into payment creation (Phase 11) |
+| [docs/observability.md](docs/observability.md) | Structured logging, Prometheus metrics, and hand-placed OpenTelemetry tracing — including two OTel SDK gotchas the tests caught (Phase 12) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

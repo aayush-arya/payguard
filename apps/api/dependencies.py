@@ -7,6 +7,7 @@ from database.session import get_sessionmaker
 from domain.errors import PayGuardError
 from domain.security import hash_api_key
 from fastapi import Depends, Header, Request
+from observability import merchant_id_var
 from providers.base import PaymentProvider
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +37,11 @@ async def get_current_merchant(
         raise PayGuardError("UNAUTHORIZED", "Invalid API key.")
 
     request.state.merchant_id = merchant.id
+    # Set (not bind-and-reset): this request's ASGI task keeps its own
+    # contextvars copy, so there's nothing to leak into sibling requests --
+    # and there's no clean point to "unset" it before the request finishes
+    # anyway, since every downstream log line for this request wants it.
+    merchant_id_var.set(str(merchant.id))
     return merchant
 
 

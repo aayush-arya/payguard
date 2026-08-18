@@ -29,10 +29,13 @@ from database.models import (
 from domain.errors import PayGuardError
 from domain.state_machine import Actor, PaymentStatus
 from ledger.service import record_payment_settled
+from observability import get_tracer, payment_id_var, reconciliation_mismatches_total
 from payments.service import apply_transition, lock_payment
 from providers.base import PaymentProvider, ProviderOutcome
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+_tracer = get_tracer("payguard.reconciliation")
 
 
 async def find_payments_needing_reconciliation(session: AsyncSession) -> list[PaymentIntent]:
@@ -91,6 +94,7 @@ async def reconcile_payment(
     intent = await lock_payment(session, payment_id, merchant_id)
     if intent is None:
         raise PayGuardError("PAYMENT_NOT_FOUND", f"No payment found with id {payment_id}.")
+    payment_id_var.set(str(intent.id))
 
     if intent.status != PaymentStatus.UNKNOWN.value:
         # Already resolved -- by a prior reconciliation pass, or by the
@@ -119,7 +123,8 @@ async def reconcile_payment(
             details={"note": "no idempotency key on record to ask the provider about"},
         )
 
-    provider_result = await provider.get_payment_status_by_idempotency_key(idem_key)
+    with _tracer.start_as_current_span("provider.get_payment_status_by_idempotency_key"):
+        provider_result = await provider.get_payment_status_by_idempotency_key(idem_key)
 
     # Re-lock to apply the result. Someone else (another reconciliation pass,
     # a webhook) may have resolved this payment while we were asking the
@@ -159,6 +164,7 @@ async def reconcile_payment(
     reported_amount = provider_result.raw_response.get("amount_minor")
     reported_currency = provider_result.raw_response.get("currency")
     if reported_amount is not None and reported_amount != intent.amount_minor:
+        reconciliation_mismatches_total.labels(result="AMOUNT_MISMATCH").inc()
         await session.commit()
         return await _write_report(
             session,
@@ -169,6 +175,7 @@ async def reconcile_payment(
             details={"internal_amount_minor": intent.amount_minor, "provider_amount_minor": reported_amount},
         )
     if reported_currency is not None and reported_currency != intent.currency:
+        reconciliation_mismatches_total.labels(result="CURRENCY_MISMATCH").inc()
         await session.commit()
         return await _write_report(
             session,

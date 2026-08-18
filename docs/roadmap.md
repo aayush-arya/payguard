@@ -19,7 +19,7 @@ discipline established in Phase 2/3).
 | 9 | Double-entry ledger + balance invariant | Done |
 | 10 | Reconciliation engine | Done |
 | 11 | Risk/fraud rule engine | Done |
-| 12 | Observability: OpenTelemetry, Prometheus, structured logs | Not started |
+| 12 | Observability: OpenTelemetry, Prometheus, structured logs | Done |
 | 13 | React/TS/Tailwind dashboard | Not started |
 | 14 | Chaos/failure simulator + demo scenarios | Not started |
 | 15 | Load testing (k6) | Not started |

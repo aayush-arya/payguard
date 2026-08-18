@@ -22,6 +22,7 @@ synchronously is more honest than pretending to be async.
 
 from __future__ import annotations
 
+import time
 import uuid
 
 from database.models import (
@@ -44,10 +45,24 @@ from idempotency.service import (
     fail_idempotency_key,
 )
 from ledger.service import record_payment_settled, record_refund_settled
+from observability import (
+    get_tracer,
+    payment_failure_total,
+    payment_id_var,
+    payment_processing_duration_seconds,
+    payment_requests_total,
+    payment_success_total,
+    provider_latency_seconds,
+    provider_timeout_total,
+    refund_failures_total,
+    refund_total,
+)
 from providers.base import AuthorizeRequest, PaymentProvider, ProviderOutcome
 from risk.service import RiskLevel, assess_payment_risk
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+_tracer = get_tracer("payguard.payments")
 
 _FAILURE_CLASSIFICATION = {
     ProviderOutcome.DECLINED: "PERMANENT",
@@ -159,6 +174,7 @@ async def create_payment(
     shipping_country: str | None = None,
     customer_ip: str | None = None,
 ) -> tuple[int, dict]:
+    payment_requests_total.inc()
     fingerprint = compute_fingerprint("POST", "/v1/payments", raw_body)
     claim = await claim_idempotency_key(
         session, merchant_id=merchant_id, idempotency_key=idempotency_key, request_fingerprint=fingerprint
@@ -179,6 +195,7 @@ async def create_payment(
         return claim.key_row.response_status, claim.key_row.response_body
 
     key_row_id = claim.key_row.id
+    _start = time.perf_counter()
     try:
         intent = PaymentIntent(
             merchant_id=merchant_id,
@@ -189,6 +206,7 @@ async def create_payment(
         )
         session.add(intent)
         await session.flush()
+        payment_id_var.set(str(intent.id))
         session.add(
             PaymentEvent(
                 payment_intent_id=intent.id,
@@ -243,6 +261,7 @@ async def create_payment(
             intent = await lock_payment(session, intent.id, merchant_id)
             assert intent is not None
             await apply_transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.blocked")
+            payment_failure_total.labels(reason="blocked").inc()
             response_status = 201
             response_body = serialize_payment(intent)
             key_row = await session.get(IdempotencyKey, key_row_id)
@@ -255,16 +274,21 @@ async def create_payment(
                 response_body=response_body,
             )
             await session.commit()
+            payment_processing_duration_seconds.observe(time.perf_counter() - _start)
             return response_status, response_body
 
-        result = await provider.authorize(
-            AuthorizeRequest(
-                amount_minor=amount_minor,
-                currency=currency,
-                token=payment_token,
-                idempotency_key=idempotency_key,
+        with (
+            _tracer.start_as_current_span("provider.authorize"),
+            provider_latency_seconds.labels(operation="authorize").time(),
+        ):
+            result = await provider.authorize(
+                AuthorizeRequest(
+                    amount_minor=amount_minor,
+                    currency=currency,
+                    token=payment_token,
+                    idempotency_key=idempotency_key,
+                )
             )
-        )
 
         intent = await lock_payment(session, intent.id, merchant_id)
         assert intent is not None
@@ -303,8 +327,12 @@ async def create_payment(
         # payment stays PROCESSING until capture_payment() finalizes it.
         if result.outcome is ProviderOutcome.DECLINED:
             await apply_transition(session, intent, PaymentStatus.FAILED, Actor.API, "payment.failed")
+            payment_failure_total.labels(reason="declined").inc()
         elif result.outcome is ProviderOutcome.UNKNOWN:
             await apply_transition(session, intent, PaymentStatus.UNKNOWN, Actor.API, "payment.unknown")
+            provider_timeout_total.inc()
+        else:
+            payment_success_total.inc()
 
         response_status = 201
         response_body = serialize_payment(intent)
@@ -318,6 +346,7 @@ async def create_payment(
             response_body=response_body,
         )
         await session.commit()
+        payment_processing_duration_seconds.observe(time.perf_counter() - _start)
         return response_status, response_body
     except Exception as exc:
         await _fail_claim_and_raise(session, key_row_id, exc)
@@ -372,6 +401,7 @@ async def capture_payment(
         intent = await lock_payment(session, payment_id, merchant_id)
         if intent is None:
             raise PayGuardError("PAYMENT_NOT_FOUND", f"No payment found with id {payment_id}.")
+        payment_id_var.set(str(intent.id))
 
         if intent.status == PaymentStatus.SUCCEEDED.value:
             # Already captured -- safe no-op replay of a legitimate retry,
@@ -390,7 +420,11 @@ async def capture_payment(
                     "This payment has no successful authorization to capture.",
                 )
 
-            result = await provider.capture(provider_txn.provider_transaction_id, intent.amount_minor)
+            with (
+                _tracer.start_as_current_span("provider.capture"),
+                provider_latency_seconds.labels(operation="capture").time(),
+            ):
+                result = await provider.capture(provider_txn.provider_transaction_id, intent.amount_minor)
 
             if result.outcome is ProviderOutcome.SUCCEEDED:
                 await apply_transition(
@@ -533,15 +567,23 @@ async def refund_payment(
         # lock will see it reflected in its own `reserved` computation.
         await session.commit()
 
-        result = await provider.refund(provider_txn.provider_transaction_id, amount_minor, idempotency_key)
+        with (
+            _tracer.start_as_current_span("provider.refund"),
+            provider_latency_seconds.labels(operation="refund").time(),
+        ):
+            result = await provider.refund(
+                provider_txn.provider_transaction_id, amount_minor, idempotency_key
+            )
 
         intent = await lock_payment(session, payment_id, merchant_id)
         assert intent is not None
+        payment_id_var.set(str(intent.id))
         refund = await session.get(Refund, refund.id)
         assert refund is not None
 
         refund.status = "SUCCEEDED" if result.outcome is ProviderOutcome.SUCCEEDED else "FAILED"
         if refund.status == "SUCCEEDED":
+            refund_total.inc()
             # This specific refund settled -- record it once, here. This is
             # independent of the payment-level aggregate settlement below
             # (which only fires for whichever refund happens to be "last
@@ -551,6 +593,8 @@ async def refund_payment(
             await record_refund_settled(
                 session, payment_intent_id=intent.id, amount_minor=refund.amount_minor
             )
+        else:
+            refund_failures_total.inc()
         await session.flush()
 
         # Settle the payment-level status only once no sibling refund is

@@ -17,6 +17,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from database.models import IdempotencyKey
+from observability import idempotency_conflicts_total
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -85,6 +86,7 @@ async def claim_idempotency_key(
     ).scalar_one()
 
     if existing.request_fingerprint != request_fingerprint:
+        idempotency_conflicts_total.inc()
         return ClaimResult(outcome=ClaimOutcome.CONFLICT, key_row=existing)
 
     if existing.status == "COMPLETED":

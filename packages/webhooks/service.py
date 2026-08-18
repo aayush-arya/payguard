@@ -25,6 +25,12 @@ from collections.abc import Awaitable, Callable
 from database.models import OutboxEvent, PaymentAttempt, PaymentIntent, ProviderTransaction, WebhookEvent
 from domain.state_machine import Actor, PaymentStatus, is_valid_payment_transition
 from ledger.service import record_payment_settled
+from observability import (
+    payment_id_var,
+    provider_transaction_id_var,
+    webhook_duplicates_total,
+    webhook_events_total,
+)
 from payments.service import apply_transition, lock_payment
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -54,6 +60,7 @@ async def receive_webhook(
         .returning(WebhookEvent)
     )
     inserted = (await session.execute(insert_stmt)).scalar_one_or_none()
+    webhook_events_total.labels(event_type=event_type).inc()
     if inserted is not None:
         # Same transaction as the dedup insert -- if this commits, an outbox
         # event for it is guaranteed to exist too (ADR-003).
@@ -65,6 +72,8 @@ async def receive_webhook(
                 payload={"webhook_event_id": str(inserted.id)},
             )
         )
+    else:
+        webhook_duplicates_total.inc()
     # Ack either way -- acknowledging *receipt*, not re-triggering
     # *processing*. A provider resending the same event must never see this
     # as a delivery failure and retry even harder.
@@ -79,6 +88,7 @@ async def _handle_payment_outcome(
     if not provider_transaction_id:
         webhook_event.processing_status = "IGNORED"
         return
+    provider_transaction_id_var.set(provider_transaction_id)
 
     stmt = (
         select(PaymentIntent)
@@ -94,6 +104,7 @@ async def _handle_payment_outcome(
 
     locked = await lock_payment(session, intent.id, intent.merchant_id)
     assert locked is not None
+    payment_id_var.set(str(locked.id))
 
     if locked.status == target_status.value:
         # Already applied -- via a prior webhook delivery, or the
