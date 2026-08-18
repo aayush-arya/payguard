@@ -34,7 +34,7 @@ progress.
 - [x] Phase 11 — Risk engine
 - [x] Phase 12 — Observability
 - [x] Phase 13 — Dashboard
-- [ ] Phase 14 — Chaos/failure testing
+- [x] Phase 14 — Chaos/failure testing
 - [ ] Phase 15 — Load testing
 - [ ] Phase 16 — Security
 - [ ] Phase 17 — Docker/Kubernetes
@@ -58,6 +58,7 @@ progress.
 | [docs/risk.md](docs/risk.md) | Deterministic rule-based risk signals, scoring, and where BLOCK plugs into payment creation (Phase 11) |
 | [docs/observability.md](docs/observability.md) | Structured logging, Prometheus metrics, and hand-placed OpenTelemetry tracing — including two OTel SDK gotchas the tests caught (Phase 12) |
 | [docs/dashboard.md](docs/dashboard.md) | React/TS/Tailwind merchant dashboard, the four backend endpoints it needed, and a real routing bug the manual browser pass caught (Phase 13) |
+| [docs/chaos.md](docs/chaos.md) | Seeded chaos injection, its deliberate scope boundary, the narrated demo script, and a state-machine assumption the e2e test's first draft got wrong (Phase 14) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally
