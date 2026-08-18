@@ -20,7 +20,7 @@ discipline established in Phase 2/3).
 | 10 | Reconciliation engine | Done |
 | 11 | Risk/fraud rule engine | Done |
 | 12 | Observability: OpenTelemetry, Prometheus, structured logs | Done |
-| 13 | React/TS/Tailwind dashboard | Not started |
+| 13 | React/TS/Tailwind dashboard | Done |
 | 14 | Chaos/failure simulator + demo scenarios | Not started |
 | 15 | Load testing (k6) | Not started |
 | 16 | Security: threat model, authn/authz hardening, rate limiting | Not started |

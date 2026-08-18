@@ -38,8 +38,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 _tracer = get_tracer("payguard.reconciliation")
 
 
-async def find_payments_needing_reconciliation(session: AsyncSession) -> list[PaymentIntent]:
+def serialize_reconciliation_report(report: ReconciliationReport) -> dict:
+    return {
+        "id": str(report.id),
+        "payment_id": str(report.payment_intent_id),
+        "result": report.result,
+        "internal_status": report.internal_status,
+        "provider_status": report.provider_status,
+        "details": report.details,
+        "created_at": report.created_at.isoformat(),
+    }
+
+
+async def find_payments_needing_reconciliation(
+    session: AsyncSession, *, merchant_id: uuid.UUID | None = None
+) -> list[PaymentIntent]:
     stmt = select(PaymentIntent).where(PaymentIntent.status == PaymentStatus.UNKNOWN.value)
+    if merchant_id is not None:
+        stmt = stmt.where(PaymentIntent.merchant_id == merchant_id)
     return list((await session.execute(stmt)).scalars().all())
 
 
@@ -247,9 +263,14 @@ async def reconcile_payment(
 
 
 async def run_reconciliation_pass(
-    session: AsyncSession, provider: PaymentProvider
+    session: AsyncSession, provider: PaymentProvider, *, merchant_id: uuid.UUID | None = None
 ) -> list[ReconciliationReport]:
-    payments = await find_payments_needing_reconciliation(session)
+    """`merchant_id=None` (the default, used by the operational
+    scripts/run_reconciliation.py entrypoint) reconciles every merchant's
+    UNKNOWN payments. The dashboard's on-demand trigger (ADR-008) passes the
+    calling merchant's id so one merchant's button press can't sweep in --
+    or report on -- another merchant's payments."""
+    payments = await find_payments_needing_reconciliation(session, merchant_id=merchant_id)
     reports = []
     for intent in payments:
         report = await reconcile_payment(session, intent.id, intent.merchant_id, provider)

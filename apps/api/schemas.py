@@ -52,3 +52,64 @@ class RefundResponse(BaseModel):
     amount: int
     status: str
     created_at: datetime
+
+
+class PaymentListResponse(BaseModel):
+    items: list[PaymentResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class PaymentEventResponse(BaseModel):
+    id: UUID
+    from_status: str | None
+    to_status: str
+    actor: str
+    created_at: datetime
+
+
+class PaymentAttemptResponse(BaseModel):
+    id: UUID
+    provider_name: str
+    status: str
+    failure_classification: str | None
+    attempt_number: int
+    created_at: datetime
+
+
+class LedgerEntryResponse(BaseModel):
+    id: UUID
+    ledger_transaction_id: UUID
+    account: str
+    direction: str
+    amount: int
+    created_at: datetime
+
+
+class PaymentDetailResponse(PaymentResponse):
+    events: list[PaymentEventResponse]
+    attempts: list[PaymentAttemptResponse]
+    refunds: list[RefundResponse]
+    ledger_entries: list[LedgerEntryResponse]
+
+
+class DashboardSummaryResponse(BaseModel):
+    counts_by_status: dict[str, int]
+    total_payments: int
+    total_succeeded_amount: int
+    total_refunded_amount: int
+
+
+class ReconciliationReportResponse(BaseModel):
+    id: UUID
+    payment_id: UUID
+    result: str
+    internal_status: str
+    provider_status: str | None
+    details: dict
+    created_at: datetime
+
+
+class ReconciliationRunResponse(BaseModel):
+    reports: list[ReconciliationReportResponse]

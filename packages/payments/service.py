@@ -28,6 +28,7 @@ import uuid
 from database.models import (
     AuditLog,
     IdempotencyKey,
+    LedgerEntry,
     OutboxEvent,
     PaymentAttempt,
     PaymentEvent,
@@ -366,6 +367,168 @@ async def get_payment(
     if intent is None:
         raise PayGuardError("PAYMENT_NOT_FOUND", f"No payment found with id {payment_id}.")
     return intent
+
+
+async def list_payments(
+    session: AsyncSession,
+    *,
+    merchant_id: uuid.UUID,
+    status: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[PaymentIntent], int]:
+    """Merchant-scoped, newest-first. Returns (page, total_matching_count) --
+    the dashboard needs the total to render pagination controls without a
+    second round trip that could race against the first (docs/dashboard.md)."""
+    filters = [PaymentIntent.merchant_id == merchant_id]
+    if status is not None:
+        filters.append(PaymentIntent.status == status)
+
+    total = (
+        await session.execute(select(func.count()).select_from(PaymentIntent).where(*filters))
+    ).scalar_one()
+    items = (
+        (
+            await session.execute(
+                select(PaymentIntent)
+                .where(*filters)
+                .order_by(PaymentIntent.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return list(items), total
+
+
+def serialize_payment_event(event: PaymentEvent) -> dict:
+    return {
+        "id": str(event.id),
+        "from_status": event.from_status,
+        "to_status": event.to_status,
+        "actor": event.actor,
+        "created_at": event.created_at.isoformat(),
+    }
+
+
+def serialize_payment_attempt(attempt: PaymentAttempt) -> dict:
+    return {
+        "id": str(attempt.id),
+        "provider_name": attempt.provider_name,
+        "status": attempt.status,
+        "failure_classification": attempt.failure_classification,
+        "attempt_number": attempt.attempt_number,
+        "created_at": attempt.created_at.isoformat(),
+    }
+
+
+def serialize_ledger_entry(entry: LedgerEntry) -> dict:
+    return {
+        "id": str(entry.id),
+        "ledger_transaction_id": str(entry.ledger_transaction_id),
+        "account": entry.account,
+        "direction": entry.direction,
+        "amount": entry.amount_minor,
+        "created_at": entry.created_at.isoformat(),
+    }
+
+
+async def get_payment_detail(session: AsyncSession, *, merchant_id: uuid.UUID, payment_id: uuid.UUID) -> dict:
+    """The single call the dashboard's payment detail page needs -- the
+    payment plus every record that explains how it got to its current
+    state, in one round trip rather than the four+ separate list calls a
+    naively REST-y design would require."""
+    intent = await get_payment(session, merchant_id=merchant_id, payment_id=payment_id)
+
+    events = (
+        (
+            await session.execute(
+                select(PaymentEvent)
+                .where(PaymentEvent.payment_intent_id == intent.id)
+                .order_by(PaymentEvent.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    attempts = (
+        (
+            await session.execute(
+                select(PaymentAttempt)
+                .where(PaymentAttempt.payment_intent_id == intent.id)
+                .order_by(PaymentAttempt.attempt_number.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    refunds = (
+        (
+            await session.execute(
+                select(Refund).where(Refund.payment_intent_id == intent.id).order_by(Refund.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    ledger_entries = (
+        (
+            await session.execute(
+                select(LedgerEntry)
+                .where(LedgerEntry.payment_intent_id == intent.id)
+                .order_by(LedgerEntry.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    return {
+        **serialize_payment(intent),
+        "events": [serialize_payment_event(e) for e in events],
+        "attempts": [serialize_payment_attempt(a) for a in attempts],
+        "refunds": [serialize_refund(r) for r in refunds],
+        "ledger_entries": [serialize_ledger_entry(entry) for entry in ledger_entries],
+    }
+
+
+async def get_dashboard_summary(session: AsyncSession, *, merchant_id: uuid.UUID) -> dict:
+    """Aggregate counts/volume for the dashboard's landing page. Counting by
+    status in one grouped query, rather than one COUNT per status, keeps
+    this to a single round trip regardless of how many statuses exist."""
+    status_rows = (
+        await session.execute(
+            select(PaymentIntent.status, func.count())
+            .where(PaymentIntent.merchant_id == merchant_id)
+            .group_by(PaymentIntent.status)
+        )
+    ).all()
+    counts_by_status = {status: count for status, count in status_rows}
+
+    total_succeeded_amount = (
+        await session.execute(
+            select(func.coalesce(func.sum(PaymentIntent.amount_minor), 0)).where(
+                PaymentIntent.merchant_id == merchant_id,
+                PaymentIntent.status == PaymentStatus.SUCCEEDED.value,
+            )
+        )
+    ).scalar_one()
+    total_refunded_amount = (
+        await session.execute(
+            select(func.coalesce(func.sum(Refund.amount_minor), 0))
+            .join(PaymentIntent, Refund.payment_intent_id == PaymentIntent.id)
+            .where(PaymentIntent.merchant_id == merchant_id, Refund.status == "SUCCEEDED")
+        )
+    ).scalar_one()
+
+    return {
+        "counts_by_status": counts_by_status,
+        "total_payments": sum(counts_by_status.values()),
+        "total_succeeded_amount": total_succeeded_amount,
+        "total_refunded_amount": total_refunded_amount,
+    }
 
 
 async def capture_payment(

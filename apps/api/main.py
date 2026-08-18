@@ -24,6 +24,7 @@ _load_dotenv()
 
 from database.session import get_engine  # noqa: E402
 from fastapi import FastAPI, Request, Response  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from observability import (  # noqa: E402
     bind_context,
     configure_logging,
@@ -35,7 +36,7 @@ from providers import MockProvider  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from apps.api.errors import install_error_handlers  # noqa: E402
-from apps.api.routers import payments, refunds, webhooks  # noqa: E402
+from apps.api.routers import dashboard, payments, refunds, webhooks  # noqa: E402
 
 configure_logging()
 configure_tracing()
@@ -43,9 +44,22 @@ _tracer = get_tracer("payguard.api")
 
 app = FastAPI(title="PayGuard API", version="0.1.0")
 install_error_handlers(app)
+# The dashboard (Phase 13) is a separate origin (Vite dev server / static
+# build) calling this API with a bearer API key, never a cookie -- so this
+# is safe to scope wide open on origins without also enabling credentialed
+# requests. A real deployment would replace "*" with the dashboard's actual
+# origin(s); nothing here trusts the browser's origin for authorization.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(payments.router)
 app.include_router(refunds.router)
 app.include_router(webhooks.router)
+app.include_router(dashboard.router)
 
 # MockProvider holds no I/O resources (its "connection" is an in-memory
 # dict), so it needs no async startup/shutdown -- a plain module-level
