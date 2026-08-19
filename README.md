@@ -38,7 +38,7 @@ progress.
 - [x] Phase 15 — Load testing
 - [x] Phase 16 — Security
 - [x] Phase 17 — Docker/Kubernetes
-- [ ] Phase 18 — Terraform/Cloud
+- [x] Phase 18 — Terraform/Cloud
 - [ ] Phase 19 — CI/CD
 - [ ] Phase 20 — Final engineering review
 
@@ -62,6 +62,7 @@ progress.
 | [docs/load-testing.md](docs/load-testing.md) | k6 steady-throughput and idempotency-storm scenarios, a real single-worker latency finding, and a k6-JSON-shape bug the report tooling caught (Phase 15) |
 | [docs/security.md](docs/security.md) | Threat model, API key rotation with an overlap window, Redis-backed atomic rate limiting, and the full cross-merchant tenant-isolation test sweep (Phase 16) |
 | [docs/deployment.md](docs/deployment.md) | Multi-stage Dockerfiles, the full containerized stack, Kubernetes manifests, and an honest account of what was verified against real containers vs. what a `kind` cluster's network restriction left unverified (Phase 17) |
+| [docs/terraform.md](docs/terraform.md) | Reference AWS infrastructure (VPC, RDS, ElastiCache, ECS Fargate) — validated and formatted, deliberately not applied against a real account (Phase 18) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally
