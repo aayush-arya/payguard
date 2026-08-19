@@ -8,6 +8,7 @@ import pytest_asyncio
 from database.models import Merchant
 from domain.security import generate_api_key, hash_api_key
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
@@ -58,6 +59,17 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture
+async def redis_client():
+    client = Redis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+    async for key in client.scan_iter("ratelimit:*"):
+        await client.delete(key)
+    yield client
+    async for key in client.scan_iter("ratelimit:*"):
+        await client.delete(key)
+    await client.aclose()
+
+
+@pytest_asyncio.fixture
 def db_sessionmaker(db_engine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(db_engine, expire_on_commit=False)
 
@@ -96,9 +108,17 @@ async def api_client(db_engine):
     loop, but pytest-asyncio gives each test function its own event loop, and
     asyncpg connections can't be reused across event loops. Reset the cache
     (and dispose the previous engine) so the app under test always gets an
-    engine bound to the current test's loop.
+    engine bound to the current test's loop. ratelimit.get_redis() is the
+    same kind of process-wide lru_cache singleton and needs the same cache
+    reset for the same reason -- but unlike the SQLAlchemy engine, a
+    redis-py connection whose transport is bound to a now-closed event loop
+    can't be gracefully awaited closed from a new one (the transport tries
+    to schedule a callback on the dead loop and raises "Event loop is
+    closed"), so this just drops the reference and lets it get collected
+    rather than attempting a cross-loop close.
     """
     import database.session as session_module
+    import ratelimit.redis_client as redis_module
 
     from apps.api.main import app
 
@@ -107,6 +127,8 @@ async def api_client(db_engine):
         await session_module.get_engine().dispose()
     session_module.get_engine.cache_clear()
     session_module.get_sessionmaker.cache_clear()
+
+    redis_module.get_redis.cache_clear()
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

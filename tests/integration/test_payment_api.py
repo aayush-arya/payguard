@@ -176,6 +176,35 @@ async def test_merchant_cannot_read_another_merchants_payment(api_client, mercha
     assert response.status_code == 404
 
 
+async def test_merchant_cannot_capture_another_merchants_payment(api_client, merchant_with_key, db_session):
+    """Same tenant-isolation guarantee (docs/architecture.md section 18),
+    for a mutating endpoint this time -- Merchant B must not be able to
+    capture funds on Merchant A's payment just by knowing its id."""
+    from database.models import Merchant
+    from domain.security import hash_api_key
+
+    _, api_key_a = merchant_with_key
+    api_key_b = "sk_test_merchant_b_" + uuid.uuid4().hex
+    merchant_b = Merchant(name="Merchant B", api_key_hash=hash_api_key(api_key_b))
+    db_session.add(merchant_b)
+    await db_session.commit()
+
+    create = await api_client.post(
+        "/v1/payments", json=_payment_body(), headers=_headers(api_key_a, str(uuid.uuid4()))
+    )
+    payment_id = create.json()["id"]
+    assert create.json()["status"] == "PROCESSING"
+
+    capture = await api_client.post(
+        f"/v1/payments/{payment_id}/capture", headers=_headers(api_key_b, str(uuid.uuid4()))
+    )
+    assert capture.status_code == 404
+
+    # And genuinely untouched -- not just a 404 while secretly capturing.
+    still_processing = await api_client.get(f"/v1/payments/{payment_id}", headers=_headers(api_key_a))
+    assert still_processing.json()["status"] == "PROCESSING"
+
+
 async def test_capture_moves_processing_payment_to_succeeded(api_client, merchant_with_key):
     _, api_key = merchant_with_key
     create = await api_client.post(

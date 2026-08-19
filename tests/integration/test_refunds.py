@@ -208,3 +208,27 @@ async def test_merchant_cannot_read_another_merchants_refund(api_client, merchan
 
     response = await api_client.get(f"/v1/refunds/{refund_id}", headers=_headers(api_key_b))
     assert response.status_code == 404
+
+
+async def test_merchant_cannot_refund_another_merchants_payment(api_client, merchant_with_key, db_session):
+    """Tenant isolation (docs/architecture.md section 18) for the mutating
+    refund endpoint -- Merchant B must not be able to initiate a refund
+    against Merchant A's settled payment just by knowing its id."""
+    from database.models import Merchant
+    from domain.security import generate_api_key, hash_api_key
+
+    api_key_a = merchant_with_key[1]
+    api_key_b = generate_api_key()
+    merchant_b = Merchant(name="Merchant B", api_key_hash=hash_api_key(api_key_b))
+    db_session.add(merchant_b)
+    await db_session.commit()
+
+    payment_id = await _create_succeeded_payment(api_client, api_key_a, amount=5000)
+
+    response = await _refund(api_client, api_key_b, payment_id, 1000)
+    assert response.status_code == 404
+
+    # And genuinely untouched -- no refund was created against merchant A's
+    # payment as a side effect of the rejected attempt.
+    still_settled = await api_client.get(f"/v1/payments/{payment_id}", headers=_headers(api_key_a))
+    assert still_settled.json()["status"] == "SUCCEEDED"

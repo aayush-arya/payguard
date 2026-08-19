@@ -47,6 +47,16 @@ class Merchant(Base):
     id: Mapped[uuid.UUID] = _uuid_pk()
     name: Mapped[str] = mapped_column(String, nullable=False)
     api_key_hash: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # Rotation (Phase 16, docs/security.md): "issuing a new key with an
+    # overlap window before revoking the old one, not in-place mutation."
+    # rotate_api_key() (packages/merchants/service.py) moves the current
+    # hash here with an expiry rather than deleting it outright, so a
+    # merchant's already-deployed integration keeps working for the
+    # overlap window while it's updated to the new key.
+    previous_api_key_hash: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
+    previous_api_key_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     status: Mapped[str] = mapped_column(String, nullable=False, default="active")
     created_at: Mapped[datetime] = _created_at()
 

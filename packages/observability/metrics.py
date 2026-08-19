@@ -57,6 +57,11 @@ reconciliation_mismatches_total = Counter(
     ["result"],
 )
 
+rate_limit_rejections_total = Counter(
+    "payguard_rate_limit_rejections_total",
+    "Requests rejected for exceeding a merchant's rate limit (Phase 16, docs/security.md)",
+)
+
 
 def render_latest() -> tuple[bytes, str]:
     """Returns (body, content_type) ready to hand back as an HTTP response."""

@@ -36,7 +36,7 @@ progress.
 - [x] Phase 13 — Dashboard
 - [x] Phase 14 — Chaos/failure testing
 - [x] Phase 15 — Load testing
-- [ ] Phase 16 — Security
+- [x] Phase 16 — Security
 - [ ] Phase 17 — Docker/Kubernetes
 - [ ] Phase 18 — Terraform/Cloud
 - [ ] Phase 19 — CI/CD
@@ -60,6 +60,7 @@ progress.
 | [docs/dashboard.md](docs/dashboard.md) | React/TS/Tailwind merchant dashboard, the four backend endpoints it needed, and a real routing bug the manual browser pass caught (Phase 13) |
 | [docs/chaos.md](docs/chaos.md) | Seeded chaos injection, its deliberate scope boundary, the narrated demo script, and a state-machine assumption the e2e test's first draft got wrong (Phase 14) |
 | [docs/load-testing.md](docs/load-testing.md) | k6 steady-throughput and idempotency-storm scenarios, a real single-worker latency finding, and a k6-JSON-shape bug the report tooling caught (Phase 15) |
+| [docs/security.md](docs/security.md) | Threat model, API key rotation with an overlap window, Redis-backed atomic rate limiting, and the full cross-merchant tenant-isolation test sweep (Phase 16) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

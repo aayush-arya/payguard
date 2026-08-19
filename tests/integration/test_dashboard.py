@@ -148,6 +148,27 @@ async def test_dashboard_summary_reflects_real_counts_and_volume(api_client, mer
     assert body["total_succeeded_amount"] == 1000
 
 
+async def test_dashboard_summary_excludes_other_merchants_payments(api_client, db_session):
+    """Tenant isolation (docs/architecture.md section 18) for an aggregate
+    endpoint -- Merchant A's summary must reflect only Merchant A's
+    payments, never counted or summed together with Merchant B's."""
+    key_a = generate_api_key()
+    merchant_a = Merchant(name="Merchant A", api_key_hash=hash_api_key(key_a))
+    key_b = generate_api_key()
+    merchant_b = Merchant(name="Merchant B", api_key_hash=hash_api_key(key_b))
+    db_session.add_all([merchant_a, merchant_b])
+    await db_session.commit()
+
+    await _create_payment(api_client, key_a, amount=1000)
+    await _create_payment(api_client, key_b, amount=99999)
+    await _create_payment(api_client, key_b, amount=99999)
+
+    response = await api_client.get("/v1/dashboard/summary", headers=_headers(key_a))
+    body = response.json()
+    assert body["total_payments"] == 1
+    assert body["total_succeeded_amount"] != 99999 * 2
+
+
 async def test_reconciliation_run_endpoint_only_touches_the_calling_merchants_payments(
     api_client, db_session
 ):

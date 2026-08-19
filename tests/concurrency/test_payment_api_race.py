@@ -5,6 +5,14 @@ Idempotency-Key must produce 100 HTTP responses but exactly one payment
 record and exactly one provider authorization -- verified by querying the
 database afterward, never by trusting that the responses merely "looked
 successful".
+
+Both tests raise RATE_LIMIT_CAPACITY well above CONCURRENCY: Phase 16's
+merchant-scoped rate limiter (packages/ratelimit) is a different concern
+from what's being proven here (a single burst of concurrent requests from
+one legitimate caller, not sustained abuse), and at the default capacity
+would otherwise start returning 429s partway through these 100 concurrent
+requests -- a real interaction between two independently-correct features,
+not a bug in either one.
 """
 
 import asyncio
@@ -22,8 +30,9 @@ def _headers(api_key: str, idempotency_key: str) -> dict:
 
 
 async def test_100_concurrent_identical_payment_requests_yield_one_payment(
-    api_client, merchant_with_key, db_sessionmaker
+    api_client, merchant_with_key, db_sessionmaker, monkeypatch
 ):
+    monkeypatch.setenv("RATE_LIMIT_CAPACITY", str(CONCURRENCY * 2))
     merchant_id, api_key = merchant_with_key
     idempotency_key = f"key-{uuid.uuid4()}"
     body = {
@@ -68,8 +77,9 @@ async def test_100_concurrent_identical_payment_requests_yield_one_payment(
 
 
 async def test_100_concurrent_requests_mixed_payloads_reject_the_losing_fingerprint(
-    api_client, merchant_with_key, db_sessionmaker
+    api_client, merchant_with_key, db_sessionmaker, monkeypatch
 ):
+    monkeypatch.setenv("RATE_LIMIT_CAPACITY", str(CONCURRENCY * 2))
     merchant_id, api_key = merchant_with_key
     idempotency_key = f"key-{uuid.uuid4()}"
 

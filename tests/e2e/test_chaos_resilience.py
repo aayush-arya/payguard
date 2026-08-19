@@ -25,9 +25,16 @@ def _headers(api_key: str, idempotency_key: str) -> dict:
 
 
 async def test_chaos_burst_resolves_cleanly_under_reconciliation(
-    api_client, merchant_with_key, db_sessionmaker
+    api_client, merchant_with_key, db_sessionmaker, monkeypatch
 ):
     from apps.api.main import app
+
+    # Phase 16's merchant-scoped rate limiter is a different concern from
+    # what this test proves (resilience under chaos, not abuse prevention)
+    # -- at the default capacity, BATCH_SIZE concurrent requests from one
+    # merchant would only avoid 429s by luck of real per-request latency
+    # leaving enough time for the bucket to refill mid-burst.
+    monkeypatch.setenv("RATE_LIMIT_CAPACITY", str(BATCH_SIZE * 2))
 
     merchant_id, api_key = merchant_with_key
     original_provider = app.state.provider

@@ -17,7 +17,7 @@ from payments.service import (
 from providers.base import PaymentProvider
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.dependencies import get_current_merchant, get_db_session, get_provider
+from apps.api.dependencies import enforce_rate_limit, get_current_merchant, get_db_session, get_provider
 from apps.api.schemas import PaymentCreateRequest, RefundCreateRequest
 
 router = APIRouter(prefix="/v1/payments", tags=["payments"])
@@ -29,7 +29,7 @@ def _require_idempotency_key(idempotency_key: str | None) -> str:
     return idempotency_key
 
 
-@router.post("", status_code=201, response_model=None)
+@router.post("", status_code=201, response_model=None, dependencies=[Depends(enforce_rate_limit)])
 async def create_payment_endpoint(
     payload: PaymentCreateRequest,
     request: Request,
@@ -99,7 +99,7 @@ async def get_payment_detail_endpoint(
     return await get_payment_detail(db_session, merchant_id=merchant.id, payment_id=payment_id)
 
 
-@router.post("/{payment_id}/capture", response_model=None)
+@router.post("/{payment_id}/capture", response_model=None, dependencies=[Depends(enforce_rate_limit)])
 async def capture_payment_endpoint(
     payment_id: UUID,
     request: Request,
@@ -124,7 +124,9 @@ async def capture_payment_endpoint(
     return body
 
 
-@router.post("/{payment_id}/refunds", status_code=201, response_model=None)
+@router.post(
+    "/{payment_id}/refunds", status_code=201, response_model=None, dependencies=[Depends(enforce_rate_limit)]
+)
 async def create_refund_endpoint(
     payment_id: UUID,
     payload: RefundCreateRequest,
