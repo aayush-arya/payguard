@@ -39,7 +39,7 @@ progress.
 - [x] Phase 16 — Security
 - [x] Phase 17 — Docker/Kubernetes
 - [x] Phase 18 — Terraform/Cloud
-- [ ] Phase 19 — CI/CD
+- [x] Phase 19 — CI/CD
 - [ ] Phase 20 — Final engineering review
 
 ## Documentation
@@ -63,6 +63,7 @@ progress.
 | [docs/security.md](docs/security.md) | Threat model, API key rotation with an overlap window, Redis-backed atomic rate limiting, and the full cross-merchant tenant-isolation test sweep (Phase 16) |
 | [docs/deployment.md](docs/deployment.md) | Multi-stage Dockerfiles, the full containerized stack, Kubernetes manifests, and an honest account of what was verified against real containers vs. what a `kind` cluster's network restriction left unverified (Phase 17) |
 | [docs/terraform.md](docs/terraform.md) | Reference AWS infrastructure (VPC, RDS, ElastiCache, ECS Fargate) — validated and formatted, deliberately not applied against a real account (Phase 18) |
+| [docs/ci-cd.md](docs/ci-cd.md) | GitHub Actions: six parallel jobs covering lint, the full test suite, frontend build, Docker builds, and Terraform/Kubernetes validation, running for real on every push (Phase 19) |
 | [docs/roadmap.md](docs/roadmap.md) | Phase-by-phase development roadmap |
 
 ## Running locally

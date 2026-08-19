@@ -1,0 +1,153 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A second push to the same branch cancels whatever CI run is already in
+# flight for it -- there's no value in finishing a check against a commit
+# that's already been superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: payguard
+          POSTGRES_PASSWORD: payguard
+          POSTGRES_DB: payguard
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U payguard -d payguard"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://payguard:payguard@localhost:5432/payguard
+      REDIS_URL: redis://localhost:6379/0
+      WEBHOOK_SECRET: ci_webhook_secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Run migrations
+        run: alembic upgrade head
+      - name: Run the full test suite
+        # Not -n auto / parallelized: several suites (tests/concurrency,
+        # tests/e2e) deliberately open many real concurrent database
+        # connections per test to prove race-condition safety --
+        # parallelizing test *files* on top of that would multiply
+        # concurrent connection demand against Postgres's connection
+        # limit for no benefit, the same reason this project's own
+        # workflow always stops any live preview server before running
+        # this suite locally.
+        run: pytest tests/ -v
+
+  frontend:
+    name: Frontend build + typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+
+  docker-build:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [api, worker, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/${{ matrix.target }}.Dockerfile
+          push: false
+          tags: payguard-${{ matrix.target }}:ci
+          # Cache layers between runs on GitHub's own cache backend --
+          # without this every run rebuilds the apt-get/npm-install layers
+          # from scratch, which is most of each image's build time.
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+
+  terraform:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -diff
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  kubernetes-manifests:
+    name: Kubernetes manifest shape check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Parse every manifest and assert it declares a kind
+        run: |
+          python -c "
+          import yaml, pathlib, sys
+          failed = False
+          for f in sorted(pathlib.Path('infra/kubernetes').glob('*.yaml')):
+              try:
+                  docs = [d for d in yaml.safe_load_all(f.read_text()) if d]
+                  kinds = [d.get('kind') for d in docs]
+                  if not all(kinds):
+                      raise ValueError(f'a document is missing kind: {kinds}')
+                  print(f'{f.name}: OK ({kinds})')
+              except Exception as e:
+                  print(f'{f.name}: FAILED - {e}')
+                  failed = True
+          sys.exit(1 if failed else 0)
+          "

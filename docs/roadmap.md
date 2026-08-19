@@ -26,7 +26,7 @@ discipline established in Phase 2/3).
 | 16 | Security: threat model, authn/authz hardening, rate limiting | Done |
 | 17 | Docker + Kubernetes | Done |
 | 18 | Terraform / optional AWS deployment | Done (validated, not applied -- no AWS account in this project) |
-| 19 | CI/CD (GitHub Actions) | Not started |
+| 19 | CI/CD (GitHub Actions) | Done |
 | 20 | Final engineering review | Not started |
 
 Phase 1 deliverables live in [`architecture.md`](architecture.md) and
