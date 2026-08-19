@@ -23,7 +23,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
+      # Installed from this project's own pyproject.toml, not a bare `pip
+      # install ruff` -- an unpinned standalone install grabs whatever's
+      # newest on PyPI at CI run time, which can (and did, on this
+      # project's first CI run) format code differently than whatever
+      # version a contributor has locally, turning "ruff format --check"
+      # into a check against a moving target instead of an agreed-upon one.
+      - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
 
@@ -72,7 +78,15 @@ jobs:
         # limit for no benefit, the same reason this project's own
         # workflow always stops any live preview server before running
         # this suite locally.
-        run: pytest tests/ -v
+        #
+        # `python -m pytest`, never a bare `pytest` invocation: only the
+        # `-m` form prepends the current directory to sys.path, which is
+        # what makes `apps.api`/`apps.worker` importable at all -- they're
+        # not part of the installed `payguard` package (pyproject.toml's
+        # package-dir only maps packages/, not apps/), so a bare `pytest`
+        # here fails every apps.* import with ModuleNotFoundError, which
+        # this project's first CI run did.
+        run: python -m pytest tests/ -v
 
   frontend:
     name: Frontend build + typecheck
