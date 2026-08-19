@@ -27,7 +27,7 @@ discipline established in Phase 2/3).
 | 17 | Docker + Kubernetes | Done |
 | 18 | Terraform / optional AWS deployment | Done (validated, not applied -- no AWS account in this project) |
 | 19 | CI/CD (GitHub Actions) | Done |
-| 20 | Final engineering review | Not started |
+| 20 | Final engineering review | Done |
 
 Phase 1 deliverables live in [`architecture.md`](architecture.md) and
 [`adr/`](adr). Nothing beyond documentation is implemented yet — no application code,
