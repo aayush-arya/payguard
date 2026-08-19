@@ -1,0 +1,77 @@
+# A StatefulSet, not a Deployment -- Postgres needs a stable identity and
+# its own persistent volume that survives a pod reschedule, which is exactly
+# what a Deployment's interchangeable-pod model doesn't guarantee.
+#
+# This is here to make the manifest set demonstrably runnable on a bare
+# cluster with no external dependencies -- a real production deployment
+# would use a managed database (RDS, see infra/terraform/) instead of
+# running Postgres as a StatefulSet, for the operational reasons any
+# managed-database pitch makes: automated backups, point-in-time recovery,
+# failover, and patching without an on-call engineer doing it by hand.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: payguard
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: payguard
+            - name: POSTGRES_DB
+              value: payguard
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payguard-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "payguard", "-d", "payguard"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: payguard
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None  # headless -- StatefulSet pods are addressed individually, not load-balanced

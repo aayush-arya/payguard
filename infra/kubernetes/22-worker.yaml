@@ -1,0 +1,38 @@
+# No Service -- nothing calls the worker over the network (it's a polling
+# consumer of outbox_events, docs/architecture.md section 10), and no HPA
+# for the same reason api's is CPU-based and works: the worker's throughput
+# bottleneck is the outbox backlog depth (payguard_outbox_backlog, Phase 12),
+# not CPU, so scaling it on CPU utilization wouldn't track the metric that
+# actually indicates it's falling behind. `SELECT ... FOR UPDATE SKIP
+# LOCKED` (ADR-003) is what makes running >1 replica here safe at all --
+# multiple workers pull different rows without double-processing one.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: payguard
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: payguard-worker:latest
+          envFrom:
+            - configMapRef:
+                name: payguard-config
+            - secretRef:
+                name: payguard-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

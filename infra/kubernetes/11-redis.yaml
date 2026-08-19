@@ -1,0 +1,50 @@
+# A plain Deployment, not a StatefulSet -- unlike Postgres, losing this
+# Redis instance's data is not a correctness problem for this system.
+# Idempotency keys and the ledger live in Postgres; Redis only ever holds
+# rate-limit token-bucket state (packages/ratelimit, Phase 16), which is
+# reconstructed correctly (buckets start full) the moment it's empty --
+# there is nothing here worth a PersistentVolumeClaim over.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: payguard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: payguard
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

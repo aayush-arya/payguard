@@ -1,0 +1,18 @@
+# Non-secret configuration -- DATABASE_URL/REDIS_URL/WEBHOOK_SECRET live in
+# 02-secrets.yaml instead, even though a URL without embedded credentials
+# would arguably be fine here, because "which values are secret" is a
+# property of the value's *type*, not today's specific string -- keeping
+# the boundary at "connection strings and credentials always go in Secret"
+# means nobody has to re-derive that judgment call later when a URL that
+# used to be safe stops being one.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payguard-config
+  namespace: payguard
+data:
+  ENVIRONMENT: "production"
+  RATE_LIMIT_CAPACITY: "20"
+  RATE_LIMIT_REFILL_PER_SECOND: "5"
+  DB_POOL_SIZE: "20"
+  DB_POOL_MAX_OVERFLOW: "30"

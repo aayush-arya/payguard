@@ -1,0 +1,103 @@
+# The full containerized stack (Phase 17) -- api, worker, and frontend built
+# from infra/docker/*.Dockerfile, wired to their own postgres/redis. This is
+# deliberately a *separate* file from docker-compose.yml (which only runs
+# postgres/redis for local dev against a host-run `uvicorn`/`npm run dev`):
+# running both simultaneously would collide on container/service names, and
+# the two files serve different purposes -- docker-compose.yml is the fast
+# inner-loop dev setup, this is "does the whole thing actually run as the
+# containers Kubernetes will later run."
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -p payguard-prod up --build
+#
+# The -p (project name) keeps this stack's containers/network/volumes
+# namespaced separately from docker-compose.yml's, so both can coexist on
+# the same machine without a name collision.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: payguard
+      POSTGRES_PASSWORD: payguard
+      POSTGRES_DB: payguard
+    volumes:
+      - payguard_prod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payguard -d payguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://payguard:payguard@postgres:5432/payguard
+    entrypoint: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Runs once and exits -- api/worker wait on this succeeding, not on a
+    # long-running service, so the schema is guaranteed to exist before
+    # anything that queries it starts (docker-compose.yml's dev workflow
+    # relies on the developer having already run this by hand; the
+    # containerized stack shouldn't carry that same manual step).
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://payguard:payguard@postgres:5432/payguard
+      REDIS_URL: redis://redis:6379/0
+      WEBHOOK_SECRET: dev_webhook_secret_change_me
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/worker.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://payguard:payguard@postgres:5432/payguard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  payguard_prod_postgres_data:

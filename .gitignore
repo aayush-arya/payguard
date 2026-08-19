@@ -26,6 +26,12 @@ frontend/build/
 !.env.example
 *.pem
 *.key
+infra/kubernetes/02-secrets.yaml
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
 
 # OS / editor
 .DS_Store

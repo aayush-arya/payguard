@@ -1,0 +1,40 @@
+# Path-based routing on one host: /v1 and /metrics to the API, everything
+# else to the dashboard -- the same "dashboard is a separate consumer of the
+# API, not a merged app" boundary from Phase 13 carried into how traffic
+# actually gets routed in a real cluster. Assumes an ingress-nginx
+# controller is already installed; this manifest only declares routing
+# rules, not the controller itself.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: payguard
+  namespace: payguard
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: payguard.example.com  # replace with a real domain before applying
+      http:
+        paths:
+          - path: /v1(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /metrics(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

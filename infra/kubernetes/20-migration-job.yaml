@@ -1,0 +1,29 @@
+# A Job, not part of the api Deployment's startup -- running `alembic
+# upgrade head` from every api replica's container entrypoint would mean N
+# replicas racing to apply the same migration concurrently on a rolling
+# restart. Alembic takes an advisory lock during upgrade so that race
+# wouldn't corrupt anything, but it would still mean migration failures
+# surface as a crashlooping api pod instead of a clearly-named Job you'd
+# check first. Run this explicitly (`kubectl apply -f
+# 20-migration-job.yaml` after every image update that includes a new
+# migration) before rolling api/worker to the new image.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: payguard-migrate
+  namespace: payguard
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: payguard-api:latest
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: payguard-secrets
+                  key: DATABASE_URL
