@@ -1,7 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ShieldCheck, Sparkles } from 'lucide-react'
 import { checkApiHealth, getDashboardSummary, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { AmbientBackground } from '../components/ui'
 
 // Public by design -- packages/../scripts/seed_demo_merchant.py seeds a
 // merchant with exactly this key so anyone opening the dashboard can try
@@ -54,15 +57,28 @@ export function Connect() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
-      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">PayGuard Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Enter a merchant API key to connect.
-        </p>
+    <div className="relative flex min-h-screen items-center justify-center px-4 text-text">
+      <AmbientBackground />
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-2xl backdrop-blur-xl"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-[0_0_20px_-4px_var(--color-primary)]">
+            <ShieldCheck size={18} strokeWidth={2.25} />
+          </span>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold text-text">PayGuard</p>
+            <p className="text-[10px] uppercase tracking-wider text-text-faint">Payment Infrastructure</p>
+          </div>
+        </div>
+
+        <p className="mt-5 text-sm text-text-muted">Enter a merchant API key to connect.</p>
 
         {apiReachable === false && (
-          <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+          <p className="mt-4 rounded-lg border border-warning/20 bg-warning-soft px-3 py-2 text-xs text-warning">
             Can't reach the PayGuard API. Is it running?
           </p>
         )}
@@ -71,19 +87,20 @@ export function Connect() {
           type="button"
           onClick={handleTryDemo}
           disabled={checking}
-          className="mt-6 w-full rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
         >
+          <Sparkles size={14} />
           {checking ? 'Connecting…' : 'Try the demo'}
         </button>
-        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-2 text-[11px] text-text-faint">
           Public demo key, connected to fake data and MockProvider only:{' '}
-          <code className="break-all rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">{DEMO_API_KEY}</code>
+          <code className="break-all rounded bg-white/5 px-1 py-0.5">{DEMO_API_KEY}</code>
         </p>
 
-        <div className="mt-6 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+        <div className="mt-6 flex items-center gap-3 text-[11px] text-text-faint">
+          <div className="h-px flex-1 bg-border" />
           or use your own key
-          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
@@ -93,23 +110,23 @@ export function Connect() {
             placeholder="sk_test_..."
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
           />
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={checking || !apiKey.trim()}
-            className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-slate-900"
+            className="rounded-lg border border-border-strong px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-white/5 disabled:opacity-50"
           >
             {checking ? 'Connecting…' : 'Connect'}
           </button>
         </form>
 
-        <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-          Run <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">python scripts/seed_merchant.py</code> to
-          create your own test merchant and print its API key.
+        <p className="mt-4 text-[11px] text-text-faint">
+          Run <code className="rounded bg-white/5 px-1 py-0.5">python scripts/seed_merchant.py</code> to create
+          your own test merchant and print its API key.
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }

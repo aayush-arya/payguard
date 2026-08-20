@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { refundPayment, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { Modal, useToast } from './ui'
 
 export function RefundModal({
   paymentId,
@@ -16,6 +17,7 @@ export function RefundModal({
   onRefunded: () => void
 }) {
   const { apiKey } = useAuth()
+  const { push } = useToast()
   const [amount, setAmount] = useState(String(remaining))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,6 +28,7 @@ export function RefundModal({
     setError(null)
     try {
       await refundPayment(apiKey!, paymentId, Number(amount))
+      push('Refund created', 'success')
       onRefunded()
       onClose()
     } catch (err) {
@@ -36,44 +39,41 @@ export function RefundModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg dark:bg-slate-900">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Refund payment</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Up to {remaining} {currency} remains refundable.
-        </p>
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
-            Amount (minor units)
-            <input
-              type="number"
-              min={1}
-              max={remaining}
-              required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            />
-          </label>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-slate-900"
-            >
-              {submitting ? 'Refunding…' : 'Refund'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal open onClose={onClose} title="Refund payment">
+      <p className="-mt-2 mb-4 text-sm text-text-muted">
+        Up to {remaining} {currency} remains refundable.
+      </p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1 text-sm text-text-muted">
+          Amount (minor units)
+          <input
+            type="number"
+            min={1}
+            max={remaining}
+            required
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
+          />
+        </label>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <div className="mt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-white/5"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+          >
+            {submitting ? 'Refunding…' : 'Refund'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }

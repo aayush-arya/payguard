@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Plus, Receipt } from 'lucide-react'
 import { listPayments } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useApiQuery } from '../lib/useApiQuery'
-import { StatusBadge } from '../components/StatusBadge'
+import { GlassCard, StatusBadge, SkeletonRow, ErrorState, EmptyState } from '../components/ui'
 import { NewPaymentModal } from '../components/NewPaymentModal'
 import { formatAmount, formatDateTime } from '../lib/format'
 
@@ -24,7 +26,17 @@ export function PaymentsList() {
   const { apiKey } = useAuth()
   const [status, setStatus] = useState('')
   const [offset, setOffset] = useState(0)
-  const [showNewPayment, setShowNewPayment] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [showNewPayment, setShowNewPayment] = useState(searchParams.get('new') === '1')
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowNewPayment(true)
+      searchParams.delete('new')
+      setSearchParams(searchParams, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { data, error, loading, refetch } = useApiQuery(
     () => listPayments(apiKey!, { status: status || undefined, limit: PAGE_SIZE, offset }),
@@ -39,83 +51,86 @@ export function PaymentsList() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Payments</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-text">Payments</h1>
+          <p className="mt-1 text-sm text-text-muted">{data ? `${data.total} total` : 'Loading…'}</p>
+        </div>
         <button
           type="button"
           onClick={() => setShowNewPayment(true)}
-          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-white dark:text-slate-900"
+          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
-          New payment
+          <Plus size={15} /> New payment
         </button>
       </div>
 
-      <select
-        value={status}
-        onChange={(e) => handleStatusChange(e.target.value)}
-        className="w-fit rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-      >
-        <option value="">All statuses</option>
+      <div className="flex gap-2 overflow-x-auto">
+        <FilterChip label="All" active={status === ''} onClick={() => handleStatusChange('')} />
         {STATUSES.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
+          <FilterChip key={s} label={s} active={status === s} onClick={() => handleStatusChange(s)} />
         ))}
-      </select>
-
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-400 dark:border-slate-800">
-              <th className="px-4 py-3 font-medium">ID</th>
-              <th className="px-4 py-3 font-medium">Amount</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Reference</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
-                  Loading…
-                </td>
-              </tr>
-            )}
-            {data && data.items.length === 0 && !loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
-                  No payments match this filter.
-                </td>
-              </tr>
-            )}
-            {data?.items.map((payment) => (
-              <tr key={payment.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800/60">
-                <td className="px-4 py-3">
-                  <Link to={`/payments/${payment.id}`} className="hover:underline">
-                    {payment.id.slice(0, 8)}…
-                  </Link>
-                </td>
-                <td className="px-4 py-3">{formatAmount(payment.amount, payment.currency)}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={payment.status} />
-                </td>
-                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                  {payment.merchant_reference ?? '—'}
-                </td>
-                <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                  {formatDateTime(payment.created_at)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
+      {error && <ErrorState message={error} onRetry={refetch} />}
+
+      {!error && (
+        <GlassCard padding="none">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-text-faint">
+                <th className="px-5 py-3 font-medium">Payment</th>
+                <th className="px-5 py-3 font-medium">Amount</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Reference</th>
+                <th className="px-5 py-3 font-medium text-right">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} columns={5} />)}
+
+              {data && data.items.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={<Receipt size={18} />}
+                      title="No payments match this filter"
+                      description="Try a different status, or create a new payment to get started."
+                    />
+                  </td>
+                </tr>
+              )}
+
+              {data?.items.map((payment, i) => (
+                <motion.tr
+                  key={payment.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02, duration: 0.2 }}
+                  className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]"
+                >
+                  <td className="px-5 py-3">
+                    <Link to={`/payments/${payment.id}`} className="font-mono text-xs text-text-muted hover:text-primary">
+                      {payment.id.slice(0, 8)}…
+                    </Link>
+                  </td>
+                  <td className="px-5 py-3 tabular-nums text-text">{formatAmount(payment.amount, payment.currency)}</td>
+                  <td className="px-5 py-3">
+                    <StatusBadge status={payment.status} />
+                  </td>
+                  <td className="px-5 py-3 text-text-muted">{payment.merchant_reference ?? '—'}</td>
+                  <td className="px-5 py-3 text-right text-xs text-text-faint">{formatDateTime(payment.created_at)}</td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+        </GlassCard>
+      )}
+
       {data && data.total > PAGE_SIZE && (
-        <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-          <span>
+        <div className="flex items-center justify-between text-sm text-text-muted">
+          <span className="tabular-nums">
             {offset + 1}–{Math.min(offset + PAGE_SIZE, data.total)} of {data.total}
           </span>
           <div className="flex gap-2">
@@ -123,7 +138,7 @@ export function PaymentsList() {
               type="button"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-              className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-40 dark:border-slate-700"
+              className="rounded-lg border border-border px-3 py-1.5 transition-colors hover:border-border-strong disabled:opacity-30"
             >
               Previous
             </button>
@@ -131,7 +146,7 @@ export function PaymentsList() {
               type="button"
               disabled={offset + PAGE_SIZE >= data.total}
               onClick={() => setOffset(offset + PAGE_SIZE)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-40 dark:border-slate-700"
+              className="rounded-lg border border-border px-3 py-1.5 transition-colors hover:border-border-strong disabled:opacity-30"
             >
               Next
             </button>
@@ -139,9 +154,22 @@ export function PaymentsList() {
         </div>
       )}
 
-      {showNewPayment && (
-        <NewPaymentModal onClose={() => setShowNewPayment(false)} onCreated={refetch} />
-      )}
+      {showNewPayment && <NewPaymentModal onClose={() => setShowNewPayment(false)} onCreated={refetch} />}
     </div>
+  )
+}
+
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+        active
+          ? 'border-primary/30 bg-primary-soft text-primary'
+          : 'border-border text-text-muted hover:border-border-strong hover:text-text'
+      }`}
+    >
+      {label.replace(/_/g, ' ')}
+    </button>
   )
 }

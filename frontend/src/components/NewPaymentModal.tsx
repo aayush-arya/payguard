@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { createPayment, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { Modal, useToast } from './ui'
 
 const DEMO_TOKENS = [
   { value: 'pm_demo_ok', label: 'Succeeds' },
@@ -9,8 +10,12 @@ const DEMO_TOKENS = [
   { value: 'pm_demo_timeout', label: 'Timeout (resolves via reconciliation)' },
 ]
 
+const inputClass =
+  'rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50'
+
 export function NewPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { apiKey } = useAuth()
+  const { push } = useToast()
   const [amount, setAmount] = useState('1000')
   const [currency, setCurrency] = useState('USD')
   const [token, setToken] = useState(DEMO_TOKENS[0].value)
@@ -29,6 +34,7 @@ export function NewPaymentModal({ onClose, onCreated }: { onClose: () => void; o
       // readable while still being unique per submission.
       const uniqueToken = `${token}_${crypto.randomUUID().slice(0, 8)}`
       await createPayment(apiKey!, { amount: Number(amount), currency, token: uniqueToken })
+      push('Payment created', 'success')
       onCreated()
       onClose()
     } catch (err) {
@@ -39,64 +45,57 @@ export function NewPaymentModal({ onClose, onCreated }: { onClose: () => void; o
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg dark:bg-slate-900">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">New payment</h2>
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
-            Amount (minor units, e.g. cents)
-            <input
-              type="number"
-              min={1}
-              required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
-            Currency
-            <input
-              required
-              maxLength={3}
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm uppercase outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-600 dark:text-slate-300">
-            Demo scenario
-            <select
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            >
-              {DEMO_TOKENS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-slate-900"
-            >
-              {submitting ? 'Creating…' : 'Create payment'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal open onClose={onClose} title="New payment">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1 text-sm text-text-muted">
+          Amount (minor units, e.g. cents)
+          <input
+            type="number"
+            min={1}
+            required
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-text-muted">
+          Currency
+          <input
+            required
+            maxLength={3}
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+            className={`${inputClass} uppercase`}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-text-muted">
+          Demo scenario
+          <select value={token} onChange={(e) => setToken(e.target.value)} className={inputClass}>
+            {DEMO_TOKENS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-surface-solid">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <div className="mt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-white/5"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+          >
+            {submitting ? 'Creating…' : 'Create payment'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }

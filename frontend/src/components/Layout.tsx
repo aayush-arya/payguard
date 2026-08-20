@@ -1,52 +1,52 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useAuth } from '../lib/auth'
-
-const NAV_LINKS = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/payments', label: 'Payments', end: false },
-  { to: '/reconciliation', label: 'Reconciliation', end: false },
-]
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Outlet, useLocation } from 'react-router-dom'
+import { Sidebar } from './shell/Sidebar'
+import { TopBar } from './shell/TopBar'
+import { CommandPalette } from './shell/CommandPalette'
+import { AmbientBackground } from './ui'
 
 export function Layout() {
-  const { disconnect } = useAuth()
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((v) => !v)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <header className="border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-8">
-            <span className="text-lg font-semibold tracking-tight">PayGuard</span>
-            <nav className="flex gap-1">
-              {NAV_LINKS.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.end}
-                  className={({ isActive }) =>
-                    `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                        : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-          <button
-            type="button"
-            onClick={disconnect}
-            className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-          >
-            Disconnect
-          </button>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <Outlet />
-      </main>
+    <div className="flex min-h-screen text-text">
+      <AmbientBackground />
+      <Sidebar mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
+        <TopBar onOpenCommandPalette={() => setPaletteOpen(true)} onOpenSidebar={() => setSidebarOpen(true)} />
+        <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   )
 }

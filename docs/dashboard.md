@@ -72,10 +72,78 @@ frontend/
 │   │   ├── auth.tsx         # API key context, localStorage-backed
 │   │   ├── useApiQuery.ts   # minimal fetch-on-mount hook (no React Query --
 │   │   │                     this app has no need for its cache/retry machinery)
+│   │   ├── mockData.ts      # isolated mock layer -- see "Premium redesign" below
 │   │   └── types.ts, format.ts
-│   ├── components/          # StatusBadge, Layout, SummaryCard, NewPaymentModal, RefundModal
-│   └── pages/                # Connect, DashboardHome, PaymentsList, PaymentDetail, Reconciliation
+│   ├── components/
+│   │   ├── ui/               # design system: GlassCard, MetricCard, StatusBadge,
+│   │   │                       TrendIndicator, DataTable bits, ChartCard, Timeline,
+│   │   │                       Modal, Skeleton, EmptyState/ErrorState, Toast,
+│   │   │                       AmbientBackground
+│   │   ├── shell/             # Sidebar, TopBar, CommandPalette (app chrome)
+│   │   ├── Layout.tsx, NewPaymentModal.tsx, RefundModal.tsx
+│   └── pages/                # Connect, DashboardHome, PaymentsList, PaymentDetail,
+│                                Reconciliation, RiskAndFraud, Webhooks, ProviderHealth,
+│                                ComingSoon
 ```
+
+## Premium redesign (Phase 21)
+
+Status: implemented. The dashboard's visual layer was rebuilt into a dark,
+glassmorphic "fintech infrastructure" aesthetic (Framer Motion, Recharts,
+`cmdk` command palette, a canvas particle background), without touching any
+backend behavior and without regressing the "thin consumer of the API"
+principle above -- every page that shows real data still gets it from the
+same four endpoints (plus the pre-existing payment/refund endpoints); the
+redesign only changed how that data is presented.
+
+**Design system.** `components/ui/` holds the reusable primitives (`GlassCard`,
+`MetricCard`, `StatusBadge`, `TrendIndicator`, `ChartCard`, `Timeline`,
+`Modal`, `Skeleton`/`SkeletonRow`/`SkeletonCard`, `EmptyState`/`ErrorState`,
+a toast system) driven by CSS custom properties defined once in `index.css`
+and mirrored into Tailwind's `@theme`. Pages compose these rather than
+hand-styling their own cards and tables, so the visual language stays
+consistent without being duplicated per page.
+
+**App shell.** `components/shell/` adds a collapsible `Sidebar` (a static
+column on desktop, an off-canvas drawer with a backdrop below the `lg`
+breakpoint -- one component for both, not two implementations that could
+drift), a `TopBar` with a real `⌘K`/`Ctrl+K` command palette, and
+`CommandPalette` itself, which searches live payment data via the existing
+`listPayments()` call -- it is not a mock search index.
+
+**Mock data is isolated and labeled, per an explicit brief requirement.**
+Three pages -- Risk & Fraud, Webhooks, and Provider Health -- render UI for
+backend surfaces that don't exist yet. Rather than scatter fabricated
+numbers across components, every mock value comes from one file,
+`lib/mockData.ts`, and each exported function carries a comment naming the
+real endpoint that would replace it (e.g. `mockProviderHealth()` documents
+that it stands in for a future per-provider `/v1/providers/health`
+aggregate). Each of those three pages also says so in its own UI copy, not
+just in a code comment -- a viewer doesn't have to read source to know which
+numbers are illustrative. Every other page (Overview, Payments, Payment
+Detail, Reconciliation) is unchanged in this respect: 100% real API data, as
+it always was.
+
+**The Idempotency Inspector** (`PaymentDetail.tsx`) is the one place the
+temptation to fabricate was strongest -- the brief asked for a visual "100
+requests → 1 payment" story, and no endpoint returns 100 synthetic request
+records. It was built from what a given payment's real data actually proves
+instead: its real `attempts.length` (the idempotency claim protocol
+guarantees this is 1 regardless of retry count) and a real ledger-balance
+check, with the "100 concurrent requests" framing presented as an
+illustration of the guarantee and captioned with a pointer to the test that
+actually exercises it at that scale, `tests/concurrency/test_payment_api_race.py`.
+Nothing in the inspector reports a number that isn't real for that specific
+payment.
+
+**Responsiveness and motion.** The shell has no horizontal overflow down to
+a 375px viewport (verified via `document.documentElement.scrollWidth` ===
+`clientWidth`) -- the sidebar collapses to an off-canvas drawer below `lg`
+and every data table sits inside an `overflow-x-auto` wrapper rather than
+forcing the page to scroll sideways. `AmbientBackground` and Framer Motion
+transitions both respect `prefers-reduced-motion`, pause work on a hidden
+tab (`document.visibilitychange`), and cap device-pixel-ratio on the canvas
+to keep the particle field cheap.
 
 Every demo action (create/capture/refund) goes through the same
 `Idempotency-Key` discipline as any other client -- `lib/api.ts` generates a
@@ -119,6 +187,15 @@ create a second payment via the `timeout` scenario, resolve it through the
 Reconciliation page, and confirm the Overview page's aggregate numbers
 reflect all of it. `npm run build` (`tsc -b && vite build`) and `oxlint`
 both pass clean.
+
+The Phase 21 redesign was verified the same way: every page driven live
+against the real API and a real payment (command palette search resolving
+to a real payment by ID, Reconciliation's "everything in sync" empty state,
+a real captured payment's lifecycle/ledger/Idempotency Inspector all
+matching its actual attempt count and balance), plus a dedicated mobile
+pass (375px viewport, off-canvas sidebar drawer open/close/navigate) and a
+final `npm run build` to confirm the visual rewrite didn't regress the
+production bundle.
 
 Run the backend suite: `pytest tests/` (requires `docker compose up -d postgres redis` and
 `alembic upgrade head` first). Run the dashboard: `npm install && npm run dev`
