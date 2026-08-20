@@ -22,6 +22,13 @@ def _url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise RuntimeError("DATABASE_URL is not set")
+    # See packages/database/session.py's _database_url() -- managed
+    # Postgres providers hand back a bare postgres(ql):// URL, which asyncpg
+    # needs normalized to the +asyncpg dialect prefix.
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://") :]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
     return url
 
 

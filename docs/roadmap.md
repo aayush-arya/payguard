@@ -29,6 +29,7 @@ discipline established in Phase 2/3).
 | 19 | CI/CD (GitHub Actions) | Done |
 | 20 | Final engineering review | Done |
 | 21 | Premium dashboard redesign (visual system, real-time shell, mock-data-isolated pages) | Done |
+| 22 | Render deployment blueprint (free-tier managed Postgres/Redis + Docker services) | Blueprint written, not yet applied (no Render account in this project) |
 
 Phase 1 deliverables live in [`architecture.md`](architecture.md) and
 [`adr/`](adr). Nothing beyond documentation is implemented yet — no application code,

@@ -93,6 +93,46 @@ that reads it).
   general connectivity problem). What's actually been verified is
   described honestly in Testing below, not overstated.
 
+## Deploying to Render (Phase 22)
+
+Status: implemented, not yet applied (this environment has no Render
+account to apply it against -- same honest caveat as the Kubernetes/Terraform
+sections above). `render.yaml` (repo root) is a
+[Blueprint](https://render.com/docs/blueprint-spec) that provisions the same
+five things `docker-compose.prod.yml` runs locally -- Postgres, Redis, API,
+worker, dashboard -- from Render's free tier, using the exact Dockerfiles
+above unmodified.
+
+To deploy:
+
+1. Push this repo to GitHub (already done, if you're reading this from the
+   repo).
+2. In Render: **New -> Blueprint**, connect the repo. Render reads
+   `render.yaml` and shows a plan for all five resources before creating
+   anything -- review it (free-tier limits and exact plan names do change,
+   so this is also your chance to confirm what's actually being created).
+3. Deploy. `payguard-api`'s Docker command runs `alembic upgrade head` and
+   the idempotent demo-merchant seed (`scripts/seed_demo_merchant.py`)
+   before every boot, so the schema and the public demo key
+   (`sk_test_demo_public_...`, see docs/dashboard.md) both exist without a
+   manual step.
+4. Once `payguard-api` is live, confirm its assigned URL matches
+   `payguard-dashboard`'s `VITE_API_BASE_URL` build arg in `render.yaml`.
+   Vite bakes this into the built JS at image-build time (same constraint
+   `infra/docker/frontend.Dockerfile` has always had for the Docker Compose
+   path above) -- if the URL doesn't match, update the env var in Render's
+   dashboard and trigger a manual redeploy of `payguard-dashboard` to
+   rebuild with the corrected value.
+5. Open the dashboard's URL and click "Try the demo" -- same public-key flow
+   as the local dev server, now on a real public URL.
+
+One thing this blueprint can't fully pin down from the file alone: Render's
+free-tier availability for its Redis-compatible "Key Value" service has
+changed more than once, so `render.yaml`'s `plan: free` on `payguard-redis`
+is a best-effort default, not a guarantee -- if that plan isn't offered when
+you go through this, either accept the cheapest paid tier or point
+`REDIS_URL` at a free external Redis (e.g. Upstash) instead.
+
 ## Testing
 
 | Check | Command | Result |

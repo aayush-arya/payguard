@@ -16,6 +16,14 @@ def _database_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise RuntimeError("DATABASE_URL is not set")
+    # Managed Postgres providers (Render, Heroku, Railway) hand back a bare
+    # postgres(ql):// URL with no driver -- asyncpg needs the +asyncpg
+    # dialect prefix explicitly, so normalize it here rather than requiring
+    # every deployment target to hand-edit the URL's scheme.
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://") :]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
     return url
 
 
