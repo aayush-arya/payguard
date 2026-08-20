@@ -10,9 +10,9 @@ interface GlassCardProps extends HTMLMotionProps<'div'> {
 
 const PADDING = { none: '', sm: 'p-4', md: 'p-5', lg: 'p-7' }
 
-/** The one card primitive every page composes -- glassmorphism used once,
- * consistently, here, rather than each page inventing its own blur/border
- * combination (brief §36's "visual details" note). */
+/** The one card primitive every page composes -- a soft, flat, warm card
+ * used once, consistently, here, rather than each page inventing its own
+ * border/shadow combination (brief §36's "visual details" note). */
 export function GlassCard({
   children,
   className,
@@ -28,9 +28,9 @@ export function GlassCard({
       transition={{ duration: 0.3, ease: 'easeOut' }}
       whileHover={hoverLift ? { y: -2 } : undefined}
       className={clsx(
-        'rounded-2xl border border-border bg-surface backdrop-blur-xl',
-        'shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset,0_20px_40px_-24px_rgba(0,0,0,0.6)]',
-        hoverLift && 'transition-shadow duration-300 hover:border-border-strong',
+        'rounded-3xl border border-border bg-surface',
+        'shadow-[0_2px_8px_-2px_rgba(27,23,18,0.06),0_16px_28px_-18px_rgba(27,23,18,0.12)]',
+        hoverLift && 'transition-shadow duration-300 hover:border-border-strong hover:shadow-[0_4px_14px_-2px_rgba(27,23,18,0.1),0_20px_32px_-16px_rgba(27,23,18,0.14)]',
         PADDING[padding],
         className,
       )}

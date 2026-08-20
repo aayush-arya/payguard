@@ -136,6 +136,15 @@ actually exercises it at that scale, `tests/concurrency/test_payment_api_race.py
 Nothing in the inspector reports a number that isn't real for that specific
 payment.
 
+**Theme.** The visual system runs a light, warm palette (cream background,
+white cards, near-black ink, an amber/gold accent) rather than the dark
+glassmorphic look Phase 21 shipped with initially -- a direct swap of
+`index.css`'s design tokens plus the small number of hardcoded
+dark-surface utility classes (`bg-white/[x]` hover states, glow shadows,
+gradient buttons) that don't route through those tokens. The component
+architecture, mock-data isolation, and Idempotency Inspector are unchanged;
+only color, shadow, and card-radius values moved.
+
 **Responsiveness and motion.** The shell has no horizontal overflow down to
 a 375px viewport (verified via `document.documentElement.scrollWidth` ===
 `clientWidth`) -- the sidebar collapses to an off-canvas drawer below `lg`

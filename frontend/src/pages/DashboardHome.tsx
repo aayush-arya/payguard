@@ -30,7 +30,7 @@ export function DashboardHome() {
         </div>
         <Link
           to="/payments?new=1"
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-text shadow-[0_4px_12px_-4px_rgba(27,23,18,0.25)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus size={15} /> New Payment
         </Link>
@@ -145,7 +145,7 @@ function SystemHealthCard() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text">System status</h2>
         <span className="flex items-center gap-1.5 text-xs text-success">
-          <span className="h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_6px_var(--color-success)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-success" />
           All systems operational
         </span>
       </div>
@@ -154,7 +154,7 @@ function SystemHealthCard() {
           <div key={s.name} className="flex items-center justify-between text-sm">
             <span className="text-text-muted">{s.name}</span>
             <div className="flex items-center gap-2">
-              <div className="h-1 w-24 overflow-hidden rounded-full bg-white/5">
+              <div className="h-1 w-24 overflow-hidden rounded-full bg-black/5">
                 <div className="h-full rounded-full bg-success" style={{ width: `${s.uptime}%` }} />
               </div>
               <span className="w-12 text-right tabular-nums text-text-faint">{s.uptime}%</span>

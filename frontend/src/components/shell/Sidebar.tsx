@@ -79,12 +79,12 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; on
 
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-border bg-bg-elevated/95 backdrop-blur-xl transition-transform duration-300 lg:static lg:z-auto lg:w-60 lg:translate-x-0 lg:bg-bg-elevated/70',
+          'fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-border bg-bg-elevated transition-transform duration-300 lg:static lg:z-auto lg:w-60 lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex items-center gap-2 px-5 py-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-[0_0_20px_-4px_var(--color-primary)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-white">
             <ShieldCheck size={17} strokeWidth={2.25} />
           </span>
           <div className="leading-tight">
@@ -94,7 +94,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; on
           <button
             onClick={onMobileClose}
             aria-label="Close menu"
-            className="ml-auto rounded-md p-1 text-text-muted hover:bg-white/5 lg:hidden"
+            className="ml-auto rounded-md p-1 text-text-muted hover:bg-black/5 lg:hidden"
           >
             <X size={16} />
           </button>
@@ -118,19 +118,19 @@ export function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; on
                       'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors',
                       isActive
                         ? 'bg-gradient-to-r from-primary-soft to-transparent text-text'
-                        : 'text-text-muted hover:bg-white/[0.04] hover:text-text',
+                        : 'text-text-muted hover:bg-black/[0.04] hover:text-text',
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
                       {isActive && (
-                        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
+                        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
                       )}
                       <item.icon size={16} strokeWidth={2} />
                       <span className="flex-1">{item.label}</span>
                       {item.soon && (
-                        <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-medium text-text-faint">
+                        <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-text-faint">
                           Soon
                         </span>
                       )}

@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.2 }}
-                className="pointer-events-auto flex items-center gap-2 rounded-xl border border-border bg-surface-solid/95 px-4 py-3 text-sm text-text shadow-2xl backdrop-blur-xl"
+                className="pointer-events-auto flex items-center gap-2 rounded-xl border border-border bg-surface-solid px-4 py-3 text-sm text-text shadow-xl"
               >
                 <Icon size={16} className={COLORS[t.variant]} />
                 {t.message}

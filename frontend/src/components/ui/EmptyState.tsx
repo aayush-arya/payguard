@@ -18,7 +18,7 @@ export function EmptyState({
       animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-text-muted">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/5 text-text-muted">
         {icon}
       </div>
       <p className="text-sm font-medium text-text">{title}</p>
@@ -38,7 +38,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
         onRetry && (
           <button
             onClick={onRetry}
-            className="mt-1 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-white/5"
+            className="mt-1 rounded-lg border border-border-strong px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-black/5"
           >
             Try again
           </button>

@@ -7,29 +7,29 @@
    `text-primary`, etc. exist as real utility classes -- one source of
    truth read two ways, not two sources that can drift. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --color-bg: #05070d;
-  --color-bg-elevated: #0a0d16;
-  --color-surface: rgb(15 19 32 / 0.6);
-  --color-surface-solid: #0f1320;
-  --color-border: rgb(148 163 255 / 0.12);
-  --color-border-strong: rgb(148 163 255 / 0.24);
+  --color-bg: #f4eee1;
+  --color-bg-elevated: #fdfbf5;
+  --color-surface: #ffffff;
+  --color-surface-solid: #ffffff;
+  --color-border: #e7dfce;
+  --color-border-strong: #d6cbb2;
 
-  --color-primary: #4f7dff;
-  --color-primary-soft: rgb(79 125 255 / 0.14);
-  --color-secondary: #a76bff;
-  --color-secondary-soft: rgb(167 107 255 / 0.14);
-  --color-success: #34d399;
-  --color-success-soft: rgb(52 211 153 / 0.14);
-  --color-warning: #f5b942;
-  --color-warning-soft: rgb(245 185 66 / 0.14);
-  --color-danger: #f5677a;
-  --color-danger-soft: rgb(245 103 122 / 0.14);
+  --color-primary: #efb93a;
+  --color-primary-soft: rgb(239 185 58 / 0.18);
+  --color-secondary: #18140f;
+  --color-secondary-soft: rgb(24 20 15 / 0.06);
+  --color-success: #1e9c6b;
+  --color-success-soft: rgb(30 156 107 / 0.12);
+  --color-warning: #e08a2c;
+  --color-warning-soft: rgb(224 138 44 / 0.12);
+  --color-danger: #d14343;
+  --color-danger-soft: rgb(209 67 67 / 0.1);
 
-  --color-text: #e7eaf6;
-  --color-text-muted: #8b92ac;
-  --color-text-faint: #565d78;
+  --color-text: #1b1712;
+  --color-text-muted: #6e6559;
+  --color-text-faint: #9c9384;
 
   --font-sans: 'Inter', system-ui, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;

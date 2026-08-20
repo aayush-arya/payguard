@@ -7,7 +7,7 @@ import { formatAmount, formatDateTime } from '../lib/format'
 const LEVEL_COLOR: Record<string, string> = {
   LOW: 'var(--color-success)',
   MEDIUM: 'var(--color-warning)',
-  HIGH: '#fb923c',
+  HIGH: '#c2540a',
   BLOCKED: 'var(--color-danger)',
 }
 
@@ -99,7 +99,7 @@ export function RiskAndFraud() {
                 {c.reasons.map((r) => (
                   <span
                     key={r.label}
-                    className="rounded-md border border-border bg-white/[0.02] px-2 py-1 text-[11px] text-text-muted"
+                    className="rounded-md border border-border bg-black/[0.02] px-2 py-1 text-[11px] text-text-muted"
                   >
                     + {r.label}
                   </span>

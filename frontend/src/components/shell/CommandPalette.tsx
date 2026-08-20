@@ -69,7 +69,7 @@ export function CommandPalette({
       onOpenChange={onOpenChange}
       label="Command palette"
       shouldFilter={false}
-      className="fixed left-1/2 top-24 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface-solid/95 shadow-2xl backdrop-blur-xl"
+      className="fixed left-1/2 top-24 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface-solid shadow-xl"
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <Command.Input
@@ -91,7 +91,7 @@ export function CommandPalette({
               <Command.Item
                 key={r.id}
                 onSelect={() => go(`/payments/${r.id}`)}
-                className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]"
+                className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]"
               >
                 <span className="flex items-center gap-2">
                   <CreditCard size={14} className="text-text-faint" />
@@ -104,28 +104,28 @@ export function CommandPalette({
         )}
 
         <Command.Group heading="Go to" className="px-1 py-1 text-[10px] uppercase tracking-wider text-text-faint">
-          <Command.Item onSelect={() => go('/')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <LayoutDashboard size={14} className="text-text-faint" /> Overview
           </Command.Item>
-          <Command.Item onSelect={() => go('/payments')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/payments')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <CreditCard size={14} className="text-text-faint" /> Payments
           </Command.Item>
-          <Command.Item onSelect={() => go('/risk')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/risk')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <ShieldAlert size={14} className="text-text-faint" /> Risk & Fraud
           </Command.Item>
-          <Command.Item onSelect={() => go('/reconciliation')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/reconciliation')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <GitCompareArrows size={14} className="text-text-faint" /> Reconciliation
           </Command.Item>
-          <Command.Item onSelect={() => go('/webhooks')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/webhooks')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <Webhook size={14} className="text-text-faint" /> Webhooks
           </Command.Item>
-          <Command.Item onSelect={() => go('/settings')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/settings')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <Settings size={14} className="text-text-faint" /> Settings
           </Command.Item>
         </Command.Group>
 
         <Command.Group heading="Actions" className="px-1 py-1 text-[10px] uppercase tracking-wider text-text-faint">
-          <Command.Item onSelect={() => go('/payments?new=1')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-white/[0.06]">
+          <Command.Item onSelect={() => go('/payments?new=1')} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-text data-[selected=true]:bg-black/[0.05]">
             <Plus size={14} className="text-text-faint" /> Create payment
           </Command.Item>
         </Command.Group>

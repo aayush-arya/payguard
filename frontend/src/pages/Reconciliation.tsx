@@ -43,7 +43,7 @@ export function Reconciliation() {
         <button
           onClick={handleRun}
           disabled={running}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-text shadow-[0_4px_12px_-4px_rgba(27,23,18,0.25)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
         >
           <motion.span animate={running ? { rotate: 360 } : {}} transition={{ repeat: running ? Infinity : 0, duration: 0.8, ease: 'linear' }}>
             <RefreshCw size={15} />

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 
 const STATUS_STYLES: Record<string, string> = {
-  CREATED: 'bg-white/8 text-text-muted border-white/10',
+  CREATED: 'bg-black/[0.04] text-text-muted border-border',
   PROCESSING: 'bg-primary-soft text-primary border-primary/20',
   SUCCEEDED: 'bg-success-soft text-success border-success/20',
   FAILED: 'bg-danger-soft text-danger border-danger/20',
@@ -29,7 +29,7 @@ const DOT_STYLES: Record<string, string> = {
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  const classes = STATUS_STYLES[status] ?? 'bg-white/8 text-text-muted border-white/10'
+  const classes = STATUS_STYLES[status] ?? 'bg-black/[0.04] text-text-muted border-border'
   const dot = DOT_STYLES[status] ?? 'bg-text-faint'
   return (
     <span

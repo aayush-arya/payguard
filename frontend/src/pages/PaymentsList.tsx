@@ -58,7 +58,7 @@ export function PaymentsList() {
         <button
           type="button"
           onClick={() => setShowNewPayment(true)}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-text shadow-[0_4px_12px_-4px_rgba(27,23,18,0.25)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus size={15} /> New payment
         </button>
@@ -107,7 +107,7 @@ export function PaymentsList() {
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02, duration: 0.2 }}
-                  className="border-b border-border/60 transition-colors last:border-0 hover:bg-white/[0.02]"
+                  className="border-b border-border/60 transition-colors last:border-0 hover:bg-black/[0.02]"
                 >
                   <td className="px-5 py-3">
                     <Link to={`/payments/${payment.id}`} className="font-mono text-xs text-text-muted hover:text-primary">

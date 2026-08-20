@@ -32,14 +32,14 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="relative w-full max-w-md rounded-2xl border border-border bg-surface-solid p-6 shadow-2xl"
+            className="relative w-full max-w-md rounded-3xl border border-border bg-surface-solid p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-text">{title}</h2>
               <button
                 onClick={onClose}
                 aria-label="Close"
-                className="rounded-md p-1 text-text-muted transition-colors hover:bg-white/5 hover:text-text"
+                className="rounded-md p-1 text-text-muted transition-colors hover:bg-black/5 hover:text-text"
               >
                 <X size={16} />
               </button>

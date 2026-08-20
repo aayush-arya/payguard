@@ -15,7 +15,7 @@ const TONE_RING: Record<string, string> = {
   success: 'border-success/30 bg-success-soft text-success',
   warning: 'border-warning/30 bg-warning-soft text-warning',
   danger: 'border-danger/30 bg-danger-soft text-danger',
-  default: 'border-border-strong bg-white/5 text-text-muted',
+  default: 'border-border-strong bg-black/5 text-text-muted',
 }
 
 export function Timeline({ items }: { items: TimelineItem[] }) {

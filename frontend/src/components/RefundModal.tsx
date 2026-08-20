@@ -53,7 +53,7 @@ export function RefundModal({
             required
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
+            className="rounded-lg border border-border bg-black/[0.02] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
           />
         </label>
         {error && <p className="text-sm text-danger">{error}</p>}
@@ -61,14 +61,14 @@ export function RefundModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-white/5"
+            className="rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-black/5"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-text transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
           >
             {submitting ? 'Refunding…' : 'Refund'}
           </button>

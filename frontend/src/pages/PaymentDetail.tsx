@@ -82,7 +82,7 @@ export function PaymentDetail() {
               <button
                 onClick={handleCapture}
                 disabled={capturing}
-                className="rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-2 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-text shadow-[0_4px_12px_-4px_rgba(27,23,18,0.25)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
                 {capturing ? 'Capturing…' : 'Capture'}
               </button>
@@ -90,7 +90,7 @@ export function PaymentDetail() {
             {REFUNDABLE_STATUSES.has(payment.status) && remainingRefundable > 0 && (
               <button
                 onClick={() => setShowRefund(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text transition-colors hover:border-border-strong hover:bg-white/5"
+                className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text transition-colors hover:border-border-strong hover:bg-black/5"
               >
                 <Undo2 size={14} /> Refund
               </button>
@@ -222,7 +222,7 @@ function IdempotencyInspector({ payment }: { payment: PaymentDetailType }) {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-white/[0.02] px-3 py-1.5 text-xs text-text-muted"
+              className="flex items-center gap-2 rounded-lg border border-border bg-black/[0.02] px-3 py-1.5 text-xs text-text-muted"
             >
               <Layers size={12} className="text-text-faint" />
               POST /v1/payments{' '}
@@ -254,9 +254,9 @@ function IdempotencyInspector({ payment }: { payment: PaymentDetailType }) {
 
       <p className="mt-5 text-xs text-text-faint">
         Proven under real concurrency, not just this single request:{' '}
-        <code className="rounded bg-white/5 px-1 py-0.5">tests/concurrency/test_payment_api_race.py</code>{' '}
+        <code className="rounded bg-black/5 px-1 py-0.5">tests/concurrency/test_payment_api_race.py</code>{' '}
         fires 100 identical requests at the real HTTP boundary and verifies exactly one{' '}
-        <code className="rounded bg-white/5 px-1 py-0.5">payment_intents</code> row and one provider
+        <code className="rounded bg-black/5 px-1 py-0.5">payment_intents</code> row and one provider
         authorization result — via a single unique database constraint, never a check-then-act race.
       </p>
     </GlassCard>
@@ -336,9 +336,9 @@ function LedgerTable({ entries, currency }: { entries: PaymentDetailType['ledger
 function DetailSkeleton() {
   return (
     <div className="flex flex-col gap-6">
-      <div className="h-20 animate-pulse rounded-2xl bg-white/[0.03]" />
-      <div className="h-24 animate-pulse rounded-2xl bg-white/[0.03]" />
-      <div className="h-48 animate-pulse rounded-2xl bg-white/[0.03]" />
+      <div className="h-20 animate-pulse rounded-2xl bg-black/[0.04]" />
+      <div className="h-24 animate-pulse rounded-2xl bg-black/[0.04]" />
+      <div className="h-48 animate-pulse rounded-2xl bg-black/[0.04]" />
     </div>
   )
 }

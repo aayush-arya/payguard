@@ -57,7 +57,7 @@ export function Webhooks() {
                 <tr
                   key={e.id}
                   onClick={() => setSelected(e)}
-                  className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-white/[0.02]"
+                  className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-black/[0.02]"
                 >
                   <td className="px-5 py-3 font-mono text-xs text-text">{e.eventType}</td>
                   <td className="px-5 py-3">

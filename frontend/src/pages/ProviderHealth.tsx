@@ -22,7 +22,7 @@ export function ProviderHealth() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text">{p.name}</span>
               <span
-                className={`h-2 w-2 rounded-full ${p.status === 'operational' ? 'bg-success shadow-[0_0_6px_var(--color-success)]' : 'bg-warning shadow-[0_0_6px_var(--color-warning)]'}`}
+                className={`h-2 w-2 rounded-full ${p.status === 'operational' ? 'bg-success' : 'bg-warning'}`}
               />
             </div>
             <p className="mt-3 text-xl font-semibold tabular-nums text-text">{p.availability}%</p>
@@ -44,7 +44,7 @@ export function ProviderHealth() {
             <XAxis dataKey="name" stroke="var(--color-text-faint)" fontSize={12} tickLine={false} axisLine={false} />
             <YAxis stroke="var(--color-text-faint)" fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              cursor={{ fill: 'rgba(27,23,18,0.04)' }}
               contentStyle={{
                 background: 'var(--color-surface-solid)',
                 border: '1px solid var(--color-border)',
@@ -62,9 +62,9 @@ export function ProviderHealth() {
           <Activity size={16} />
         </span>
         <p className="text-xs text-text-muted">
-          Real provider health for this project comes from Prometheus (<code className="rounded bg-white/5 px-1">GET /metrics</code>) —
-          <code className="ml-1 rounded bg-white/5 px-1">payguard_provider_latency_seconds</code> and
-          <code className="ml-1 rounded bg-white/5 px-1">payguard_provider_timeout_total</code> already exist for MockProvider.
+          Real provider health for this project comes from Prometheus (<code className="rounded bg-black/5 px-1">GET /metrics</code>) —
+          <code className="ml-1 rounded bg-black/5 px-1">payguard_provider_latency_seconds</code> and
+          <code className="ml-1 rounded bg-black/5 px-1">payguard_provider_timeout_total</code> already exist for MockProvider.
         </p>
       </GlassCard>
     </div>

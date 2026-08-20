@@ -63,10 +63,10 @@ export function Connect() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-2xl backdrop-blur-xl"
+        className="w-full max-w-sm rounded-3xl border border-border bg-surface p-8 shadow-xl"
       >
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-white shadow-[0_0_20px_-4px_var(--color-primary)]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-white">
             <ShieldCheck size={18} strokeWidth={2.25} />
           </span>
           <div className="leading-tight">
@@ -87,14 +87,14 @@ export function Connect() {
           type="button"
           onClick={handleTryDemo}
           disabled={checking}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-3 py-2.5 text-sm font-medium text-white shadow-[0_0_24px_-8px_var(--color-primary)] transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-text shadow-[0_4px_12px_-4px_rgba(27,23,18,0.25)] transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
         >
           <Sparkles size={14} />
           {checking ? 'Connecting…' : 'Try the demo'}
         </button>
         <p className="mt-2 text-[11px] text-text-faint">
           Public demo key, connected to fake data and MockProvider only:{' '}
-          <code className="break-all rounded bg-white/5 px-1 py-0.5">{DEMO_API_KEY}</code>
+          <code className="break-all rounded bg-black/5 px-1 py-0.5">{DEMO_API_KEY}</code>
         </p>
 
         <div className="mt-6 flex items-center gap-3 text-[11px] text-text-faint">
@@ -110,20 +110,20 @@ export function Connect() {
             placeholder="sk_test_..."
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
+            className="rounded-lg border border-border bg-black/[0.02] px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary/50"
           />
           {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={checking || !apiKey.trim()}
-            className="rounded-lg border border-border-strong px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-white/5 disabled:opacity-50"
+            className="rounded-lg border border-border-strong px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-black/5 disabled:opacity-50"
           >
             {checking ? 'Connecting…' : 'Connect'}
           </button>
         </form>
 
         <p className="mt-4 text-[11px] text-text-faint">
-          Run <code className="rounded bg-white/5 px-1 py-0.5">python scripts/seed_merchant.py</code> to create
+          Run <code className="rounded bg-black/5 px-1 py-0.5">python scripts/seed_merchant.py</code> to create
           your own test merchant and print its API key.
         </p>
       </motion.div>
