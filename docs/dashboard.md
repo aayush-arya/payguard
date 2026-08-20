@@ -19,6 +19,21 @@ says the dashboard's job is "consumer of the API," and building merchant
 user accounts, sessions, or SSO would be inventing a second product with its
 own security surface for a demo tool.
 
+## The public demo key
+
+`scripts/seed_demo_merchant.py` seeds one merchant with a fixed, publicly-known
+API key, and the connect screen (`frontend/src/pages/Connect.tsx`) shows that
+key directly with a one-click "Try the demo" button — so anyone opening the
+dashboard can explore it immediately, without running a script or asking
+anyone for credentials first. This is the one deliberate exception to
+`scripts/seed_merchant.py`'s own rule that an API key is a secret shown once
+and never displayed again: a demo merchant that only ever touches
+`MockProvider` and fake money is exactly the case where a fixed, public key
+is correct, and a real merchant's key is exactly the case where it isn't.
+The seed script is idempotent — safe to run on every app start without
+creating duplicate demo merchants or rotating the key out from under anyone
+who already has it saved.
+
 ## New backend surface (four endpoints, all additive)
 
 No existing endpoint's behavior changed. Four read/aggregate endpoints were

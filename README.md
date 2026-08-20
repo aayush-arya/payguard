@@ -78,18 +78,21 @@ alembic upgrade head
 pytest tests/
 
 # try it
-python scripts/seed_merchant.py "Demo Merchant"   # prints an API key, shown once
+python scripts/seed_demo_merchant.py              # idempotent -- prints the public demo key, same one every run
 uvicorn apps.api.main:app --reload                # http://localhost:8000/docs
 python apps/worker/main.py                        # separate terminal: processes outbox events
 
 # dashboard (separate terminal)
-cd frontend && npm install && npm run dev          # http://localhost:5173 -- paste the seeded API key
+cd frontend && npm install && npm run dev          # http://localhost:5173 -- click "Try the demo," or paste the printed key
 ```
 
-Further docs (`idempotency.md`, `concurrency.md`, `reconciliation.md`, `security.md`,
-`observability.md`, `testing.md`, `deployment.md`, `failure-modes.md`) will be added
-as their corresponding phases land, so they describe real, built behavior rather than
-aspirational design.
+Want your own merchant instead of the shared demo one? `python scripts/seed_merchant.py "Your Merchant Name"`
+prints a fresh API key, shown once.
+
+See the [Documentation](#documentation) table above for every topic doc —
+each one describes real, built behavior verified against a real database
+(or, for docs/terraform.md, explicitly states where verification stopped
+and why).
 
 ## License
 
