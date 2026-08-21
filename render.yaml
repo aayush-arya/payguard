@@ -77,7 +77,10 @@ services:
     dockerContext: .
     plan: free
     healthCheckPath: /health
-    dockerBuildArgs:
-      # See the top-of-file note -- verify this against payguard-api's
-      # actual assigned URL after the first deploy.
-      VITE_API_BASE_URL: https://payguard-api.onrender.com
+    envVars:
+      # Render passes a Docker-runtime service's envVars through as build
+      # args too, which is what gets this into the Dockerfile's
+      # VITE_API_BASE_URL ARG -- see the top-of-file note: verify this
+      # against payguard-api's actual assigned URL after the first deploy.
+      - key: VITE_API_BASE_URL
+        value: https://payguard-api.onrender.com
