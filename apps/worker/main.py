@@ -6,6 +6,13 @@ it's a separate deployable in docker-compose.yml and the Kubernetes manifests
 (later phases), not a background task inside the API process: it must keep
 retrying regardless of whether the API that originally wrote the event is
 still running.
+
+The one deliberate exception is docs/deployment.md's Render blueprint: free
+hosting there has no separate background-worker plan, so `run_worker_loop()`
+below is also imported and run in-process by apps/api/main.py's lifespan
+when RUN_WORKER_INPROCESS=1 -- a demo-hosting tradeoff, not a retraction of
+the reasoning above. The Kubernetes manifests still run this as its own
+Deployment.
 """
 
 from __future__ import annotations
@@ -44,7 +51,7 @@ IDLE_POLL_INTERVAL_SECONDS = 5.0
 BATCH_SIZE = 50
 
 
-async def main() -> None:
+async def run_worker_loop() -> None:
     from database.models import OutboxEvent
     from database.session import get_sessionmaker
     from observability import outbox_backlog
@@ -77,4 +84,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run_worker_loop())

@@ -3,8 +3,8 @@
 # Blueprint -> connect this repo -> Render reads this and provisions
 # everything below in one go.
 #
-# Two things Render can't wire up automatically, so they're manual
-# one-time steps after the first deploy (see docs/deployment.md):
+# Three things worth knowing about the free-tier shape of this (see
+# docs/deployment.md for the full writeup):
 #   1. payguard-dashboard's VITE_API_BASE_URL below is a *guess* at the URL
 #      Render will assign payguard-api (predictable only if that name is
 #      still available account-wide). Confirm it matches the real URL in
@@ -16,6 +16,13 @@
 #      below has changed more than once; if `plan: free` isn't offered when
 #      you go through this, either pick the cheapest paid plan or point
 #      REDIS_URL at a free external Redis (e.g. Upstash) instead.
+#   3. There's no separate outbox-worker service here on purpose -- Render's
+#      free tier has no free background-worker plan. RUN_WORKER_INPROCESS=1
+#      below makes payguard-api run apps/worker/main.py's poll loop as a
+#      background asyncio task instead (apps/api/main.py's lifespan). Every
+#      other deployment target (docker-compose.prod.yml, Kubernetes) still
+#      runs it as its own process, which is the architecturally-correct
+#      shape apps/worker/main.py's own docstring explains.
 
 databases:
   - name: payguard-db
@@ -57,18 +64,8 @@ services:
           property: connectionString
       - key: WEBHOOK_SECRET
         generateValue: true
-
-  - type: worker
-    name: payguard-worker
-    runtime: docker
-    dockerfilePath: infra/docker/worker.Dockerfile
-    dockerContext: .
-    plan: free
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: payguard-db
-          property: connectionString
+      - key: RUN_WORKER_INPROCESS
+        value: "1"
 
   - type: web
     name: payguard-dashboard

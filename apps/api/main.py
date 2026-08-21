@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import os
 import pathlib
 import uuid
@@ -42,7 +44,27 @@ configure_logging()
 configure_tracing()
 _tracer = get_tracer("payguard.api")
 
-app = FastAPI(title="PayGuard API", version="0.1.0")
+
+@contextlib.asynccontextmanager
+async def _lifespan(_: FastAPI):
+    # Demo-hosting exception, not a retraction of apps/worker/main.py's own
+    # "must be a separate process" reasoning -- see that file's docstring.
+    # Only opts in when RUN_WORKER_INPROCESS=1 (Render's free tier has no
+    # separate background-worker plan); every other deployment target
+    # (docker-compose.prod.yml, Kubernetes) still runs the real worker.
+    worker_task = None
+    if os.environ.get("RUN_WORKER_INPROCESS") == "1":
+        from apps.worker.main import run_worker_loop
+
+        worker_task = asyncio.create_task(run_worker_loop())
+    yield
+    if worker_task is not None:
+        worker_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker_task
+
+
+app = FastAPI(title="PayGuard API", version="0.1.0", lifespan=_lifespan)
 install_error_handlers(app)
 # The dashboard (Phase 13) is a separate origin (Vite dev server / static
 # build) calling this API with a bearer API key, never a cookie -- so this

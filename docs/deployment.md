@@ -95,13 +95,27 @@ that reads it).
 
 ## Deploying to Render (Phase 22)
 
-Status: implemented, not yet applied (this environment has no Render
-account to apply it against -- same honest caveat as the Kubernetes/Terraform
-sections above). `render.yaml` (repo root) is a
-[Blueprint](https://render.com/docs/blueprint-spec) that provisions the same
-five things `docker-compose.prod.yml` runs locally -- Postgres, Redis, API,
-worker, dashboard -- from Render's free tier, using the exact Dockerfiles
-above unmodified.
+Status: implemented and applied against a real Render account (the free-tier
+adjustments below came directly from what that account's Blueprint sync
+actually rejected, not guessed in advance). `render.yaml` (repo root) is a
+[Blueprint](https://render.com/docs/blueprint-spec) that provisions Postgres,
+Redis, the API, and the dashboard on Render's free tier, using the exact
+Dockerfiles above unmodified. The worker is the one deployable that
+*doesn't* map onto this cleanly -- see below.
+
+### The worker doesn't get its own free-tier service
+
+Render's free tier has no background-worker plan (`render.yaml` originally
+declared `payguard-worker` as `type: worker`; the Blueprint sync rejected it
+with "service type is not available for this plan"). Rather than push the
+worker onto a second platform with its own uncertain free-tier limits,
+`payguard-api` now runs `apps/worker/main.py`'s outbox-polling loop
+(`run_worker_loop()`) as a background `asyncio` task inside its own process,
+gated behind `RUN_WORKER_INPROCESS=1` (`apps/api/main.py`'s `lifespan`). This
+is a demo-hosting concession, not a reversal of `apps/worker/main.py`'s own
+documented reasoning for why the worker is normally a separate process --
+`docker-compose.prod.yml` and the Kubernetes manifests above are unchanged
+and still run it that way.
 
 To deploy:
 
